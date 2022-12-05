@@ -173,6 +173,7 @@ impl Tetris {
                         shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff + 1);
                     if shape_finished {
                         shape.apply_to(&mut self.dead_blocks, rotations, x_diff, y_diff);
+                        self.complete_lines();
                         self.current_shapes_index = self.die.sample(&mut self.rng);
                         self.current_shape_rotations = 0;
                         self.current_shape_x_diff = 0;
@@ -185,6 +186,21 @@ impl Tetris {
                 }
             }
             None => panic!("code error")
+        }
+    }
+
+    fn complete_lines(&mut self) {
+        let mut completed_lines = 0;
+        for y in (0u8..20u8).rev() {
+            let mut line_complete = true;
+            for x in 0u8..10u8 {
+                let current_block_present = self.dead_blocks[usize::from(x)][usize::from(y)];
+                line_complete = line_complete && current_block_present;
+                self.dead_blocks[usize::from(x)][usize::from(y  + completed_lines)] = current_block_present;
+            }
+            if line_complete {
+                completed_lines = completed_lines + 1;
+            }
         }
     }
 
@@ -472,5 +488,44 @@ mod tests {
         assert!(tetris.block_at(3, 19), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(4, 19), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(5, 19), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_complete_a_line() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        tetris.input(Left);
+        tetris.input(Left);
+        tetris.input(Left);
+        tetris.input(Drop);
+
+        tetris.input(Drop);
+
+        tetris.input(Right);
+        tetris.input(Right);
+        tetris.input(Right);
+        tetris.input(Drop);
+
+        tetris.input(Rotate);
+        tetris.input(Rotate);
+        tetris.input(Right);
+        tetris.input(Right);
+        tetris.input(Right);
+        tetris.input(Right);
+
+        // when / then
+        tetris.input(Drop);
+
+        assert_eq!(10, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(0, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(6, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(7, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(8, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(9, 19), "\n{}", blocks_as_string(&tetris));
     }
 }
