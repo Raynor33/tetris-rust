@@ -1,11 +1,122 @@
 use rand::distributions::{Distribution, Uniform};
-use crate::tetris::action::Action;
-use crate::tetris::shape::Shape;
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
+pub enum Action {
+    Left,
+    Right,
+    Rotate,
+    Down,
+    Drop,
+}
 
-struct Tetris {
+struct Block {
+    x: i8,
+    y: i8,
+}
+
+impl Block {
+    fn new(x: i8, y: i8) -> Block {
+        Block { x, y }
+    }
+    fn x(&self) -> i8 {
+        self.x
+    }
+    fn y(&self) -> i8 {
+        self.y
+    }
+}
+
+pub struct Shape {
+    base_rotations: [[Block; 4]; 4]
+}
+
+impl Shape {
+    fn new(base_rotations: [[Block; 4]; 4]) -> Shape {
+        Shape {
+            base_rotations
+        }
+    }
+
+    pub fn j() -> Shape {
+        Shape::new([
+            [Block::new(3, 0), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(4, 2)],
+            [Block::new(5, 2), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(3, 2), Block::new(4, 1), Block::new(4, 2)],
+        ]
+        )
+    }
+
+    fn has_block_at(&self, x: i8, y: i8, rotations: usize, x_diff: i8, y_diff: i8) -> bool {
+        let base_rotation = rotations % self.base_rotations.len();
+        match self.base_rotations.get(base_rotation) {
+            Some(blocks) => {
+                let mut matches = false;
+                for block in blocks {
+                    matches = block.x() == x - x_diff && block.y() == y - y_diff;
+                    if matches {
+                        break
+                    }
+                }
+                matches
+            }
+            None => panic!("code error")
+        }
+    }
+
+    fn is_off_grid(&self, rotations: usize, x_diff: i8, y_diff: i8) -> bool {
+        let base_rotation = rotations % self.base_rotations.len();
+        match self.base_rotations.get(base_rotation) {
+            Some(blocks) => {
+                let mut off_grid: bool = false;
+                for block in blocks {
+                    let x = block.x() + x_diff;
+                    let y = block.y() + y_diff;
+                    off_grid = x > 9 || x < 0 || y > 19 || y < 0;
+                    if off_grid {
+                        break
+                    }
+                }
+                off_grid
+            }
+            None => panic!("code error")
+        }
+    }
+
+    fn apply_to(&self, mut grid: &mut [[bool; 20]; 10], rotations: usize, x_diff: i8, y_diff: i8) {
+        let base_rotation = rotations % self.base_rotations.len();
+        match self.base_rotations.get(base_rotation) {
+            Some(blocks) => {
+                for block in blocks {
+                    let x = block.x() + x_diff;
+                    let y = block.y() + y_diff;
+                    grid[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())] = true;
+                }
+            }
+            None => panic!("code error")
+        }
+    }
+
+    fn intersects(&self, grid: &[[bool; 20]; 10], rotations: usize, x_diff: i8, y_diff: i8) -> bool {
+        let base_rotation = rotations % self.base_rotations.len();
+        match self.base_rotations.get(base_rotation) {
+            Some(blocks) => {
+                for block in blocks {
+                    let x = block.x() + x_diff;
+                    let y = block.y() + y_diff;
+                    if grid[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())] {
+                        return true
+                    }
+                }
+                false
+            }
+            None => panic!("code error")
+        }
+    }
+}
+
+pub struct Tetris {
     shapes: Vec<Shape>,
     rng: ThreadRng,
     die: Uniform<usize>,
@@ -13,10 +124,11 @@ struct Tetris {
     current_shape_rotations: usize,
     current_shape_x_diff: i8,
     current_shape_y_diff: i8,
+    dead_blocks: [[bool; 20]; 10]
 }
 
 impl Tetris {
-    fn new() -> Tetris {
+    pub fn new() -> Tetris {
         Tetris::new_with_custom_shapes(vec![
             Shape::j(),
             // Shape::l(),
@@ -36,22 +148,40 @@ impl Tetris {
             current_shape_rotations: 0,
             current_shape_x_diff: 0,
             current_shape_y_diff: 0,
+            dead_blocks: [[false; 20]; 10]
         }
     }
 
     fn block_at(&self, x: i8, y: i8) -> bool {
-        match self.shapes.get(self.current_shapes_index) {
+        let is_dead_block = self.dead_blocks[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())];
+        let is_current_shape = match self.shapes.get(self.current_shapes_index) {
             Some(shape) => {
                 shape.has_block_at(x, y, self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff)
             }
             None => panic!("code error")
-        }
+        };
+        is_dead_block || is_current_shape
     }
 
-    fn valid(&self, rotations: usize, x_diff: i8, y_diff: i8) -> bool {
+    fn validate_and_place(&mut self, rotations: usize, x_diff: i8, y_diff: i8) {
         match self.shapes.get(self.current_shapes_index) {
             Some(shape) => {
-                !shape.is_off_grid(rotations, x_diff, y_diff)
+                let valid = !shape.is_off_grid(rotations, x_diff, y_diff);
+                if valid {
+                    let shape_finished = shape.is_off_grid(rotations, x_diff, y_diff + 1) ||
+                        shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff + 1);
+                    if shape_finished {
+                        shape.apply_to(&mut self.dead_blocks, rotations, x_diff, y_diff);
+                        self.current_shapes_index = self.die.sample(&mut self.rng);
+                        self.current_shape_rotations = 0;
+                        self.current_shape_x_diff = 0;
+                        self.current_shape_y_diff = 0;
+                    } else {
+                        self.current_shape_rotations = rotations;
+                        self.current_shape_x_diff = x_diff;
+                        self.current_shape_y_diff = y_diff;
+                    }
+                }
             }
             None => panic!("code error")
         }
@@ -60,24 +190,16 @@ impl Tetris {
     fn input(&mut self, action: Action) -> &Tetris {
         match action {
             Action::Left => {
-                if self.valid(self.current_shape_rotations, self.current_shape_x_diff - 1, self.current_shape_y_diff) {
-                    self.current_shape_x_diff = self.current_shape_x_diff - 1
-                }
+                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff - 1, self.current_shape_y_diff);
             }
             Action::Right => {
-                if self.valid(self.current_shape_rotations, self.current_shape_x_diff + 1, self.current_shape_y_diff) {
-                    self.current_shape_x_diff = self.current_shape_x_diff + 1
-                }
+                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff + 1, self.current_shape_y_diff);
             }
             Action::Rotate => {
-                if self.valid(self.current_shape_rotations + 1, self.current_shape_x_diff, self.current_shape_y_diff) {
-                    self.current_shape_rotations = self.current_shape_rotations + 1
-                }
+                self.validate_and_place(self.current_shape_rotations + 1, self.current_shape_x_diff, self.current_shape_y_diff);
             }
             Action::Down => {
-                if self.valid(self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff + 1) {
-                    self.current_shape_y_diff = self.current_shape_y_diff + 1
-                }
+                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff + 1);
             }
             Action::Drop => {
 
@@ -89,8 +211,7 @@ impl Tetris {
 
 #[cfg(test)]
 mod tests {
-    use crate::tetris::action::Action::{Down, Left, Right, Rotate};
-    use crate::tetris::shape::Shape;
+    use crate::tetris::tetris::Action::{Down, Left, Right, Rotate};
     use super::*;
 
     fn count_blocks(tetris: &Tetris) -> i32 {
@@ -253,26 +374,54 @@ mod tests {
         assert!(tetris.block_at(0, 2), "\n{}", blocks_as_string(&tetris));
     }
 
-    // #[test]
-    // fn should_add_a_new_shape_when_current_shape_reaches_the_bottom() {
-    //     // given
-    //     let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-    //     for i in 0..17 {
-    //         tetris.input(Down);
-    //     }
-    //
-    //     // when / then
-    //     tetris.input(Down);
-    //
-    //     assert_eq!(8, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(4, 1), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(5, 1), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(3, 18), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(3, 19), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(4, 19), "\n{}", blocks_as_string(&tetris));
-    //     assert!(tetris.block_at(5, 19), "\n{}", blocks_as_string(&tetris));
-    // }
+    #[test]
+    fn should_add_a_new_shape_when_current_shape_reaches_the_bottom() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        for i in 0..17 {
+            tetris.input(Down);
+        }
 
+        // when / then
+        tetris.input(Down);
+
+        assert_eq!(8, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 18), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 19), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_add_a_new_shape_when_current_shape_reaches_dead_blocks() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        for i in 0..18 {
+            tetris.input(Down);
+        }
+        for i in 0..15 {
+            tetris.input(Down);
+        }
+
+        // when / then
+        tetris.input(Down);
+
+        assert_eq!(12, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 16), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 17), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 17), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 17), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 18), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 19), "\n{}", blocks_as_string(&tetris));
+    }
 }
