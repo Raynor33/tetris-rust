@@ -1,6 +1,7 @@
 use rand::distributions::{Distribution, Uniform};
 use rand::Rng;
 use rand::rngs::ThreadRng;
+use crate::tetris::tetris::Action::Down;
 
 pub enum Action {
     Left,
@@ -27,7 +28,7 @@ impl Block {
     }
 }
 
-pub struct Shape {
+struct Shape {
     base_rotations: [[Block; 4]; 4]
 }
 
@@ -202,7 +203,12 @@ impl Tetris {
                 self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff + 1);
             }
             Action::Drop => {
-
+                loop {
+                    self.input(Down);
+                    if self.current_shape_y_diff == 0 {
+                        break
+                    }
+                }
             }
         }
         self
@@ -211,7 +217,7 @@ impl Tetris {
 
 #[cfg(test)]
 mod tests {
-    use crate::tetris::tetris::Action::{Down, Left, Right, Rotate};
+    use crate::tetris::tetris::Action::{Down, Drop, Left, Right, Rotate};
     use super::*;
 
     fn count_blocks(tetris: &Tetris) -> i32 {
@@ -409,6 +415,49 @@ mod tests {
 
         // when / then
         tetris.input(Down);
+
+        assert_eq!(12, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 16), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 17), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 17), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 17), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 18), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 19), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_drop_to_the_bottom() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+
+        // when / then
+        tetris.input(Drop);
+
+        assert_eq!(8, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 1), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 18), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 19), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 19), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_drop_to_dead_blocks() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        tetris.input(Drop);
+
+        // when / then
+        tetris.input(Drop);
 
         assert_eq!(12, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
