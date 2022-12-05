@@ -2,5 +2,6 @@ pub enum Action {
     Left,
     Right,
     Rotate,
-    Down
+    Down,
+    Drop,
 }

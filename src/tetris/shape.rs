@@ -37,6 +37,25 @@ impl Shape {
             None => panic!("code error")
         }
     }
+    
+    pub fn is_off_grid(&self, rotations: usize, x_diff: i8, y_diff: i8) -> bool {
+        let base_rotation = rotations % self.base_rotations.len();
+        match self.base_rotations.get(base_rotation) {
+            Some(blocks) => {
+                let mut off_grid: bool = false;
+                for block in blocks {
+                    let x = block.x() + x_diff;
+                    let y = block.y() + y_diff;
+                    off_grid = x > 9 || x < 0 || y > 19 || y < 0;
+                    if off_grid {
+                        break
+                    }
+                }
+                off_grid
+            }
+            None => panic!("code error")
+        }
+    }
 
 }
 
