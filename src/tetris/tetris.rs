@@ -167,7 +167,8 @@ impl Tetris {
     fn validate_and_place(&mut self, rotations: usize, x_diff: i8, y_diff: i8) {
         match self.shapes.get(self.current_shapes_index) {
             Some(shape) => {
-                let valid = !shape.is_off_grid(rotations, x_diff, y_diff);
+                let valid = !shape.is_off_grid(rotations, x_diff, y_diff) &&
+                    !shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff);
                 if valid {
                     let shape_finished = shape.is_off_grid(rotations, x_diff, y_diff + 1) ||
                         shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff + 1);
@@ -197,6 +198,9 @@ impl Tetris {
                 let current_block_present = self.dead_blocks[usize::from(x)][usize::from(y)];
                 line_complete = line_complete && current_block_present;
                 self.dead_blocks[usize::from(x)][usize::from(y  + completed_lines)] = current_block_present;
+                if completed_lines > 0 {
+                    self.dead_blocks[usize::from(x)][usize::from(y)] = false
+                }
             }
             if line_complete {
                 completed_lines = completed_lines + 1;
@@ -394,6 +398,80 @@ mod tests {
         assert!(tetris.block_at(1, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(0, 1), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(0, 2), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_not_move_shape_left_into_dead_blocks() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        for i in 0..9 {
+            tetris.input(Left);
+            tetris.input(Left);
+            tetris.input(Left);
+            tetris.input(Drop);
+        }
+        tetris.input(Down);
+        tetris.input(Down);
+
+        // when / then
+        tetris.input(Left);
+
+        assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 2), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 3), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 3), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 3), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_not_move_shape_right_into_dead_blocks() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        for i in 0..9 {
+            tetris.input(Right);
+            tetris.input(Right);
+            tetris.input(Right);
+            tetris.input(Drop);
+        }
+        tetris.input(Down);
+        tetris.input(Down);
+
+        // when / then
+        tetris.input(Right);
+
+        assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 2), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(3, 3), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 3), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 3), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_not_rotate_shape_into_dead_blocks() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        for i in 0..9 {
+            tetris.input(Right);
+            tetris.input(Right);
+            tetris.input(Right);
+            tetris.input(Drop);
+        }
+        tetris.input(Rotate);
+        tetris.input(Rotate);
+        tetris.input(Rotate);
+        tetris.input(Right);
+        tetris.input(Down);
+        tetris.input(Down);
+
+        // when / then
+        tetris.input(Rotate);
+
+        assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
+        // [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(4, 2)],
+        assert!(tetris.block_at(5, 2), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 3), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(5, 4), "\n{}", blocks_as_string(&tetris));
+        assert!(tetris.block_at(4, 4), "\n{}", blocks_as_string(&tetris));
     }
 
     #[test]
