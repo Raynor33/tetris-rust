@@ -1,5 +1,4 @@
 use rand::distributions::{Distribution, Uniform};
-use rand::Rng;
 use rand::rngs::ThreadRng;
 use crate::tetris::tetris::Action::Down;
 
@@ -153,7 +152,7 @@ impl Tetris {
         }
     }
 
-    fn block_at(&self, x: i8, y: i8) -> bool {
+    pub fn block_at(&self, x: i8, y: i8) -> bool {
         let is_dead_block = self.dead_blocks[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())];
         let is_current_shape = match self.shapes.get(self.current_shapes_index) {
             Some(shape) => {
@@ -208,7 +207,8 @@ impl Tetris {
         }
     }
 
-    fn input(&mut self, action: Action) -> &Tetris {
+    #[allow(unused_qualifications)]
+    pub fn input(&mut self, action: Action) -> &Tetris {
         match action {
             Action::Left => {
                 self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff - 1, self.current_shape_y_diff);
