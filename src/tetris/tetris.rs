@@ -30,7 +30,7 @@ impl Block {
 }
 
 struct Shape {
-    base_rotations: [[Block; 4]; 4]
+    base_rotations: [[Block; 4]; 4],
 }
 
 impl Shape {
@@ -40,14 +40,63 @@ impl Shape {
         }
     }
 
+    pub fn o() -> Shape {
+        Shape::new([
+            [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(5, 1)],
+        ])
+    }
+
+    pub fn s() -> Shape {
+        Shape::new([
+            [Block::new(4, 0), Block::new(5, 0), Block::new(3, 1), Block::new(4, 1)],
+            [Block::new(4, 0), Block::new(4, 1), Block::new(5, 1), Block::new(5, 2)],
+            [Block::new(4, 1), Block::new(5, 1), Block::new(3, 2), Block::new(4, 2)],
+            [Block::new(3, 0), Block::new(3, 1), Block::new(4, 1), Block::new(4, 2)],
+        ])
+    }
+
+    pub fn z() -> Shape {
+        Shape::new([
+            [Block::new(3, 0), Block::new(4, 0), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(5, 0), Block::new(5, 1), Block::new(4, 1), Block::new(4, 2)],
+            [Block::new(3, 1), Block::new(4, 1), Block::new(4, 2), Block::new(5, 2)],
+            [Block::new(4, 0), Block::new(4, 1), Block::new(3, 1), Block::new(3, 2)],
+        ])
+    }
+    pub fn t() -> Shape {
+        Shape::new([
+            [Block::new(4, 0), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(4, 1), Block::new(4, 2), Block::new(5, 1)],
+            [Block::new(4, 2), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(3, 1), Block::new(4, 1), Block::new(4, 2)],
+        ])
+    }
+    pub fn l() -> Shape {
+        Shape::new([
+            [Block::new(5, 0), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(4, 0), Block::new(4, 1), Block::new(4, 2), Block::new(5, 2)],
+            [Block::new(3, 2), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
+            [Block::new(3, 0), Block::new(4, 0), Block::new(4, 1), Block::new(4, 2)],
+        ])
+    }
     pub fn j() -> Shape {
         Shape::new([
             [Block::new(3, 0), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
             [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(4, 2)],
             [Block::new(5, 2), Block::new(3, 1), Block::new(4, 1), Block::new(5, 1)],
             [Block::new(4, 0), Block::new(3, 2), Block::new(4, 1), Block::new(4, 2)],
-        ]
-        )
+        ])
+    }
+    pub fn i() -> Shape {
+        Shape::new([
+            [Block::new(3, 1), Block::new(4, 1), Block::new(5, 1), Block::new(6, 1)],
+            [Block::new(5, 0), Block::new(5, 1), Block::new(5, 2), Block::new(5, 3)],
+            [Block::new(3, 2), Block::new(4, 2), Block::new(5, 2), Block::new(6, 2)],
+            [Block::new(4, 0), Block::new(4, 1), Block::new(4, 2), Block::new(4, 3)],
+        ])
     }
 
     fn has_block_at(&self, x: i8, y: i8, rotations: usize, x_diff: i8, y_diff: i8) -> bool {
@@ -58,7 +107,7 @@ impl Shape {
                 for block in blocks {
                     matches = block.x() == x - x_diff && block.y() == y - y_diff;
                     if matches {
-                        break
+                        break;
                     }
                 }
                 matches
@@ -77,7 +126,7 @@ impl Shape {
                     let y = block.y() + y_diff;
                     off_grid = x > 9 || x < 0 || y > 19 || y < 0;
                     if off_grid {
-                        break
+                        break;
                     }
                 }
                 off_grid
@@ -108,7 +157,7 @@ impl Shape {
                     let x = block.x() + x_diff;
                     let y = block.y() + y_diff;
                     if grid[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())] {
-                        return true
+                        return true;
                     }
                 }
                 false
@@ -132,8 +181,13 @@ pub struct Tetris {
 impl Tetris {
     pub fn new() -> Tetris {
         Tetris::new_with_custom_shapes(vec![
+            Shape::o(),
+            Shape::s(),
+            Shape::z(),
+            Shape::t(),
+            Shape::l(),
             Shape::j(),
-            // Shape::l(),
+            Shape::i(),
         ])
     }
 
@@ -150,7 +204,7 @@ impl Tetris {
             current_shape_rotations: 0,
             current_shape_x_diff: 0,
             current_shape_y_diff: 0,
-            dead_blocks: [[false; 20]; 10]
+            dead_blocks: [[false; 20]; 10],
         }
     }
 
@@ -198,7 +252,7 @@ impl Tetris {
             for x in 0u8..10u8 {
                 let current_block_present = self.dead_blocks[usize::from(x)][usize::from(y)];
                 line_complete = line_complete && current_block_present;
-                self.dead_blocks[usize::from(x)][usize::from(y  + completed_lines)] = current_block_present;
+                self.dead_blocks[usize::from(x)][usize::from(y + completed_lines)] = current_block_present;
                 if completed_lines > 0 {
                     self.dead_blocks[usize::from(x)][usize::from(y)] = false
                 }
@@ -228,7 +282,7 @@ impl Tetris {
                 loop {
                     self.input(Down);
                     if self.current_shape_y_diff == 0 {
-                        break
+                        break;
                     }
                 }
             }
