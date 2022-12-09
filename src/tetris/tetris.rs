@@ -1,3 +1,5 @@
+use std::sync::mpsc::Receiver;
+use std::thread;
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use crate::tetris::tetris::Action::Down;
@@ -124,7 +126,7 @@ pub struct Tetris {
     current_shape_rotations: usize,
     current_shape_x_diff: i8,
     current_shape_y_diff: i8,
-    dead_blocks: [[bool; 20]; 10]
+    dead_blocks: [[bool; 20]; 10],
 }
 
 impl Tetris {

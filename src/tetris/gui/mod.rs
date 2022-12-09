@@ -1,18 +1,20 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
 use fltk::{app, button::Button, enums, frame::Frame, prelude::*, window::Window};
-use fltk::app::{App, event_key};
+use fltk::app::{add_timeout3, App, event_key, handle};
 use fltk::draw::{draw_pie, draw_rect_fill, draw_rect_with_color, Offscreen, set_draw_color};
 use fltk::enums::{Color, Event, Key};
+use crate::tetris::tetris;
 use crate::tetris::tetris::{Action, Tetris};
+use crate::tetris::tetris::Action::Down;
 
-pub struct Gui {
-    app: App,
-    window: Window,
-}
+pub struct Gui {}
 
 impl Gui {
-    pub fn new(mut tetris: Tetris) -> Gui {
+    pub fn launch(action_sender: Sender<Action>, blocks_receiver: Receiver<[[bool; 20]; 10]>) {
         let app = app::App::default();
         let mut window = Window::default()
             .with_size(200, 400)
@@ -25,11 +27,48 @@ impl Gui {
         window.make_resizable(false);
         window.end();
         window.show();
+
+        let timer_sender = action_sender.clone();
+        let key_event_sender = action_sender.clone();
+
         /* Event handling */
+        let callback = move |handle| {
+            timer_sender.send(Action::Down).unwrap();
+            app::repeat_timeout3(0.3, handle);
+        };
+        app::add_timeout3(0.3, callback);
+
+
+        window.handle(move |w, event| {
+            match event {
+                Event::KeyDown => {
+                    match event_key() {
+                        Key::Up => {
+                            key_event_sender.send(Action::Rotate).unwrap();
+                            true
+                        }
+                        Key::Left => {
+                            key_event_sender.send(Action::Left).unwrap();
+                            true
+                        }
+                        Key::Right => {
+                            key_event_sender.send(Action::Right).unwrap();
+                            true
+                        }
+                        Key::Down => {
+                            key_event_sender.send(Action::Drop).unwrap();
+                            true
+                        }
+                        _ => false,
+                    }
+                }
+                _ => false,
+            }
+        });
         let offs = Offscreen::new(frame.width(), frame.height()).unwrap();
-            offs.begin();
-            draw_rect_fill(0, 0, 200, 400, Color::White);
-            offs.end();
+        offs.begin();
+        draw_rect_fill(0, 0, 200, 400, Color::White);
+        offs.end();
 
         let offs = Rc::from(RefCell::from(offs));
 
@@ -49,56 +88,24 @@ impl Gui {
             }
         });
 
-        window.handle(move |w, event| {
-            let offs = offs.borrow_mut();
-            offs.begin();
-            let handled = match event {
-                Event::KeyDown => {
-                    match event_key() {
-                        Key::Up => {
-                            tetris.input(Action::Rotate);
-                            true
+        while app.wait() {
+            if let Ok(blocks) = blocks_receiver.try_recv() {
+                let offs = offs.borrow_mut();
+                    offs.begin();
+                    for x in 0i8..10i8 {
+                        for y in 0i8..20i8 {
+                            let colour = if blocks[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())] {
+                                enums::Color::Black
+                            } else {
+                                enums::Color::White
+                            };
+                            draw_rect_fill(i32::from(x) * 20, i32::from(y) * 20, 20, 20, colour);
+                            draw_rect_with_color(i32::from(x) * 20, i32::from(y) * 20, 20, 20, enums::Color::White);
                         }
-                        Key::Left => {
-                            tetris.input(Action::Left);
-                            true
-                        }
-                        Key::Right => {
-                            tetris.input(Action::Right);
-                            true
-                        }
-                        Key::Down => {
-                            tetris.input(Action::Drop);
-                            true
-                        }
-                        _ => false,
                     }
-                }
-                _ => false,
-            };
-            for x in 0..10 {
-                for y in 0..20 {
-                    let colour = if tetris.block_at(x, y) {
-                        enums::Color::Black
-                    } else {
-                        enums::Color::White
-                    };
-                    draw_rect_fill(i32::from(x) * 20, i32::from(y) * 20, 20, 20, colour);
-                    draw_rect_with_color(i32::from(x) * 20, i32::from(y) * 20, 20, 20, enums::Color::White);
-                }
+                    offs.end();
+                    frame.redraw();
             }
-            offs.end();
-            w.redraw();
-            handled
-        });
-        let mut gui = Gui {
-            app,
-            window,
-        };
-        gui
-    }
-
-    pub fn run(&mut self) {
-        self.app.run().unwrap();
+        }
     }
 }
