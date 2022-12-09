@@ -1,21 +1,18 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::thread;
-use fltk::{app, button::Button, enums, frame::Frame, prelude::*, window::Window};
-use fltk::app::{add_timeout3, App, event_key, handle};
-use fltk::draw::{draw_pie, draw_rect_fill, draw_rect_with_color, Offscreen, set_draw_color};
+use fltk::{app, frame::Frame, prelude::*, window::Window};
+use fltk::app::{add_timeout3, App, event_key};
+use fltk::draw::{draw_rect_fill, draw_rect_with_color, Offscreen};
 use fltk::enums::{Color, Event, Key};
-use crate::tetris::tetris;
-use crate::tetris::tetris::{Action, Tetris};
+use crate::tetris::tetris::{Action};
 use crate::tetris::tetris::Action::Down;
 
 pub struct Gui {}
 
 impl Gui {
     pub fn launch(action_sender: Sender<Action>, blocks_receiver: Receiver<[[bool; 20]; 10]>) {
-        let app = app::App::default();
+        let app = App::default();
         let mut window = Window::default()
             .with_size(200, 400)
             .center_screen()
@@ -33,13 +30,13 @@ impl Gui {
 
         /* Event handling */
         let callback = move |handle| {
-            timer_sender.send(Action::Down).unwrap();
+            timer_sender.send(Down).unwrap();
             app::repeat_timeout3(0.3, handle);
         };
-        app::add_timeout3(0.3, callback);
+        add_timeout3(0.3, callback);
 
 
-        window.handle(move |w, event| {
+        window.handle(move |_, event| {
             match event {
                 Event::KeyDown => {
                     match event_key() {
@@ -95,12 +92,12 @@ impl Gui {
                     for x in 0i8..10i8 {
                         for y in 0i8..20i8 {
                             let colour = if blocks[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())] {
-                                enums::Color::Black
+                                Color::Black
                             } else {
-                                enums::Color::White
+                                Color::White
                             };
                             draw_rect_fill(i32::from(x) * 20, i32::from(y) * 20, 20, 20, colour);
-                            draw_rect_with_color(i32::from(x) * 20, i32::from(y) * 20, 20, 20, enums::Color::White);
+                            draw_rect_with_color(i32::from(x) * 20, i32::from(y) * 20, 20, 20, Color::White);
                         }
                     }
                     offs.end();

@@ -1,6 +1,5 @@
 use std::sync::mpsc;
 use std::thread;
-use tetris_rust::tetris;
 use tetris_rust::tetris::gui::Gui;
 use tetris_rust::tetris::tetris::Tetris;
 

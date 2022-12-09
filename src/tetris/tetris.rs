@@ -1,5 +1,3 @@
-use std::sync::mpsc::Receiver;
-use std::thread;
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use crate::tetris::tetris::Action::Down;
@@ -135,7 +133,7 @@ impl Shape {
         }
     }
 
-    fn apply_to(&self, mut grid: &mut [[bool; 20]; 10], rotations: usize, x_diff: i8, y_diff: i8) {
+    fn apply_to(&self, grid: &mut [[bool; 20]; 10], rotations: usize, x_diff: i8, y_diff: i8) {
         let base_rotation = rotations % self.base_rotations.len();
         match self.base_rotations.get(base_rotation) {
             Some(blocks) => {
@@ -460,7 +458,7 @@ mod tests {
     fn should_not_move_shape_left_into_dead_blocks() {
         // given
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        for i in 0..9 {
+        for _ in 0..9 {
             tetris.input(Left);
             tetris.input(Left);
             tetris.input(Left);
@@ -483,7 +481,7 @@ mod tests {
     fn should_not_move_shape_right_into_dead_blocks() {
         // given
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        for i in 0..9 {
+        for _ in 0..9 {
             tetris.input(Right);
             tetris.input(Right);
             tetris.input(Right);
@@ -506,7 +504,7 @@ mod tests {
     fn should_not_rotate_shape_into_dead_blocks() {
         // given
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        for i in 0..9 {
+        for _ in 0..9 {
             tetris.input(Right);
             tetris.input(Right);
             tetris.input(Right);
@@ -534,7 +532,7 @@ mod tests {
     fn should_add_a_new_shape_when_current_shape_reaches_the_bottom() {
         // given
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        for i in 0..17 {
+        for _ in 0..17 {
             tetris.input(Down);
         }
 
@@ -556,10 +554,10 @@ mod tests {
     fn should_add_a_new_shape_when_current_shape_reaches_dead_blocks() {
         // given
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        for i in 0..18 {
+        for _ in 0..18 {
             tetris.input(Down);
         }
-        for i in 0..15 {
+        for _ in 0..15 {
             tetris.input(Down);
         }
 
