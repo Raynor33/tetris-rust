@@ -21,5 +21,4 @@ fn main() {
         }
     });
     Gui::launch(action_sender, blocks_receiver);
-
 }

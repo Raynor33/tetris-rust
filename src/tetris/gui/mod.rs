@@ -88,20 +88,20 @@ impl Gui {
         while app.wait() {
             if let Ok(blocks) = blocks_receiver.try_recv() {
                 let offs = offs.borrow_mut();
-                    offs.begin();
-                    for x in 0i8..10i8 {
-                        for y in 0i8..20i8 {
-                            let colour = if blocks[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())] {
-                                Color::Black
-                            } else {
-                                Color::White
-                            };
-                            draw_rect_fill(i32::from(x) * 20, i32::from(y) * 20, 20, 20, colour);
-                            draw_rect_with_color(i32::from(x) * 20, i32::from(y) * 20, 20, 20, Color::White);
-                        }
+                offs.begin();
+                for x in 0i8..10i8 {
+                    for y in 0i8..20i8 {
+                        let colour = if blocks[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())] {
+                            Color::Black
+                        } else {
+                            Color::White
+                        };
+                        draw_rect_fill(i32::from(x) * 20, i32::from(y) * 20, 20, 20, colour);
+                        draw_rect_with_color(i32::from(x) * 20, i32::from(y) * 20, 20, 20, Color::White);
                     }
-                    offs.end();
-                    frame.redraw();
+                }
+                offs.end();
+                frame.redraw();
             }
         }
     }
