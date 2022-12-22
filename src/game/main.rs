@@ -1,5 +1,5 @@
 use std::sync::mpsc;
-use std::thread;
+use std::{process, thread, time};
 use tetris_rust::tetris::gui::Gui;
 use tetris_rust::tetris::tetris::Tetris;
 
@@ -11,6 +11,7 @@ fn main() {
         let mut tetris = Tetris::new();
         loop {
             tetris.input(action_receiver.recv().unwrap());
+
             let mut blocks = [[false; 20]; 10];
             for x in 0i8..10i8 {
                 for y in 0i8..20i8 {
@@ -18,6 +19,10 @@ fn main() {
                 }
             }
             blocks_sender.send(blocks).unwrap();
+            if tetris.finished() {
+                thread::sleep(time::Duration::from_secs(1));
+                process::exit(0);
+            }
         }
     });
     Gui::launch(action_sender, blocks_receiver);

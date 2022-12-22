@@ -261,6 +261,15 @@ impl Tetris {
         }
     }
 
+    pub fn finished(&self) -> bool {
+        match self.shapes.get(self.current_shapes_index) {
+            Some(shape) => {
+                return shape.intersects(&self.dead_blocks, 0, 0, 1)
+            }
+            None => panic!("code error")
+        }
+    }
+
     #[allow(unused_qualifications)]
     pub fn input(&mut self, action: Action) -> &Tetris {
         match action {
@@ -659,5 +668,20 @@ mod tests {
         assert!(tetris.block_at(7, 19), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(8, 19), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(9, 19), "\n{}", blocks_as_string(&tetris));
+    }
+
+    #[test]
+    fn should_complete_a_game() {
+        // given
+        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        for _ in 0..8 {
+            tetris.input(Drop);
+        }
+        assert_eq!(false, tetris.finished(), "\n{}", blocks_as_string(&tetris));
+
+        // when / then
+        tetris.input(Drop);
+
+        assert_eq!(true, tetris.finished(), "\n{}", blocks_as_string(&tetris));
     }
 }
