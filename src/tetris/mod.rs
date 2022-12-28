@@ -1,5 +1,7 @@
 pub mod gui;
 
+pub mod analysis;
+
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use crate::tetris::Action::Down;
