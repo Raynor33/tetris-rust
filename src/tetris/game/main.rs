@@ -1,7 +1,7 @@
 use std::sync::mpsc;
 use std::{process, thread, time};
 use tetris_rust::tetris::gui::Gui;
-use tetris_rust::tetris::Tetris;
+use tetris_rust::tetris::{ActionResult, Tetris};
 
 
 fn main() {
@@ -10,7 +10,7 @@ fn main() {
     thread::spawn(move || {
         let mut tetris = Tetris::new();
         loop {
-            tetris.input(action_receiver.recv().unwrap());
+            let result = tetris.input(action_receiver.recv().unwrap());
 
             let mut blocks = [[false; 20]; 10];
             for x in 0i8..10i8 {
@@ -19,8 +19,8 @@ fn main() {
                 }
             }
             blocks_sender.send(blocks).unwrap();
-            if tetris.finished() {
-                thread::sleep(time::Duration::from_secs(1));
+            if result == ActionResult::GameOver {
+                thread::sleep(time::Duration::from_millis(500));
                 process::exit(0);
             }
         }

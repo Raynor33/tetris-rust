@@ -167,6 +167,14 @@ impl Shape {
     }
 }
 
+#[derive(PartialEq, Debug)]
+pub enum ActionResult {
+    Invalid,
+    CurrentShape,
+    NextShape,
+    GameOver
+}
+
 pub struct Tetris {
     shapes: Vec<Shape>,
     rng: ThreadRng,
@@ -219,7 +227,7 @@ impl Tetris {
         is_dead_block || is_current_shape
     }
 
-    fn validate_and_place(&mut self, rotations: usize, x_diff: i8, y_diff: i8) {
+    fn validate_and_place(&mut self, rotations: usize, x_diff: i8, y_diff: i8) -> ActionResult {
         match self.shapes.get(self.current_shapes_index) {
             Some(shape) => {
                 let valid = !shape.is_off_grid(rotations, x_diff, y_diff) &&
@@ -234,11 +242,24 @@ impl Tetris {
                         self.current_shape_rotations = 0;
                         self.current_shape_x_diff = 0;
                         self.current_shape_y_diff = 0;
+                        match self.shapes.get(self.current_shapes_index) {
+                            Some(shape) => {
+                                if shape.intersects(&self.dead_blocks, 0, 0, 1) {
+                                    ActionResult::GameOver
+                                } else {
+                                    ActionResult::NextShape
+                                }
+                            }
+                            None => panic!("code error")
+                        }
                     } else {
                         self.current_shape_rotations = rotations;
                         self.current_shape_x_diff = x_diff;
                         self.current_shape_y_diff = y_diff;
+                        ActionResult::CurrentShape
                     }
+                } else {
+                    ActionResult::Invalid
                 }
             }
             None => panic!("code error")
@@ -263,40 +284,30 @@ impl Tetris {
         }
     }
 
-    pub fn finished(&self) -> bool {
-        match self.shapes.get(self.current_shapes_index) {
-            Some(shape) => {
-                return shape.intersects(&self.dead_blocks, 0, 0, 1)
-            }
-            None => panic!("code error")
-        }
-    }
-
     #[allow(unused_qualifications)]
-    pub fn input(&mut self, action: Action) -> &Tetris {
+    pub fn input(&mut self, action: Action) -> ActionResult {
         match action {
             Action::Left => {
-                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff - 1, self.current_shape_y_diff);
+                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff - 1, self.current_shape_y_diff)
             }
             Action::Right => {
-                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff + 1, self.current_shape_y_diff);
+                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff + 1, self.current_shape_y_diff)
             }
             Action::Rotate => {
-                self.validate_and_place(self.current_shape_rotations + 1, self.current_shape_x_diff, self.current_shape_y_diff);
+                self.validate_and_place(self.current_shape_rotations + 1, self.current_shape_x_diff, self.current_shape_y_diff)
             }
             Action::Down => {
-                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff + 1);
+                self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff + 1)
             }
             Action::Drop => {
                 loop {
-                    self.input(Down);
+                    let result = self.input(Down);
                     if self.current_shape_y_diff == 0 {
-                        break;
+                        return result
                     }
                 }
             }
         }
-        self
     }
 }
 
@@ -354,8 +365,9 @@ mod tests {
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
 
         // when / then
-        tetris.input(Left);
+        let result = tetris.input(Left);
 
+        assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(2, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(2, 1), "\n{}", blocks_as_string(&tetris));
@@ -369,8 +381,9 @@ mod tests {
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
 
         // when / then
-        tetris.input(Right);
+        let result = tetris.input(Right);
 
+        assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(4, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(4, 1), "\n{}", blocks_as_string(&tetris));
@@ -384,8 +397,9 @@ mod tests {
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
 
         // when / then
-        tetris.input(Down);
+        let result = tetris.input(Down);
 
+        assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 2), "\n{}", blocks_as_string(&tetris));
@@ -399,8 +413,9 @@ mod tests {
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
 
         // when / then
-        tetris.input(Rotate);
+        let result = tetris.input(Rotate);
 
+        assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(4, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(5, 0), "\n{}", blocks_as_string(&tetris));
@@ -417,8 +432,9 @@ mod tests {
         tetris.input(Left);
 
         // when / then
-        tetris.input(Left);
+        let result = tetris.input(Left);
 
+        assert_eq!(ActionResult::Invalid, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(0, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(0, 1), "\n{}", blocks_as_string(&tetris));
@@ -436,8 +452,9 @@ mod tests {
         tetris.input(Right);
 
         // when / then
-        tetris.input(Right);
+        let result = tetris.input(Right);
 
+        assert_eq!(ActionResult::Invalid, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(7, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(7, 1), "\n{}", blocks_as_string(&tetris));
@@ -456,8 +473,9 @@ mod tests {
         tetris.input(Left);
 
         // when / then
-        tetris.input(Rotate);
+        let result = tetris.input(Rotate);
 
+        assert_eq!(ActionResult::Invalid, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(0, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(1, 0), "\n{}", blocks_as_string(&tetris));
@@ -479,8 +497,9 @@ mod tests {
         tetris.input(Down);
 
         // when / then
-        tetris.input(Left);
+        let result = tetris.input(Left);
 
+        assert_eq!(ActionResult::Invalid, result);
         assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 2), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 3), "\n{}", blocks_as_string(&tetris));
@@ -502,8 +521,9 @@ mod tests {
         tetris.input(Down);
 
         // when / then
-        tetris.input(Right);
+        let result = tetris.input(Right);
 
+        assert_eq!(ActionResult::Invalid, result);
         assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 2), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 3), "\n{}", blocks_as_string(&tetris));
@@ -529,8 +549,9 @@ mod tests {
         tetris.input(Down);
 
         // when / then
-        tetris.input(Rotate);
+        let result = tetris.input(Rotate);
 
+        assert_eq!(ActionResult::Invalid, result);
         assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         // [Block::new(4, 0), Block::new(5, 0), Block::new(4, 1), Block::new(4, 2)],
         assert!(tetris.block_at(5, 2), "\n{}", blocks_as_string(&tetris));
@@ -548,8 +569,9 @@ mod tests {
         }
 
         // when / then
-        tetris.input(Down);
+        let result = tetris.input(Down);
 
+        assert_eq!(ActionResult::NextShape, result);
         assert_eq!(8, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
@@ -573,8 +595,9 @@ mod tests {
         }
 
         // when / then
-        tetris.input(Down);
+        let result = tetris.input(Down);
 
+        assert_eq!(ActionResult::NextShape, result);
         assert_eq!(12, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
@@ -596,8 +619,9 @@ mod tests {
         let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
 
         // when / then
-        tetris.input(Drop);
+        let result = tetris.input(Drop);
 
+        assert_eq!(ActionResult::NextShape, result);
         assert_eq!(8, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
@@ -616,8 +640,9 @@ mod tests {
         tetris.input(Drop);
 
         // when / then
-        tetris.input(Drop);
+        let result = tetris.input(Drop);
 
+        assert_eq!(ActionResult::NextShape, result);
         assert_eq!(12, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
@@ -657,8 +682,9 @@ mod tests {
         tetris.input(Right);
 
         // when / then
-        tetris.input(Drop);
+        let result = tetris.input(Drop);
 
+        assert_eq!(ActionResult::NextShape, result);
         assert_eq!(10, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 0), "\n{}", blocks_as_string(&tetris));
         assert!(tetris.block_at(3, 1), "\n{}", blocks_as_string(&tetris));
@@ -679,11 +705,10 @@ mod tests {
         for _ in 0..8 {
             tetris.input(Drop);
         }
-        assert_eq!(false, tetris.finished(), "\n{}", blocks_as_string(&tetris));
 
         // when / then
-        tetris.input(Drop);
+        let result = tetris.input(Drop);
 
-        assert_eq!(true, tetris.finished(), "\n{}", blocks_as_string(&tetris));
+        assert_eq!(ActionResult::GameOver, result);
     }
 }
