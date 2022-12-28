@@ -5,8 +5,8 @@ use fltk::{app, frame::Frame, prelude::*, window::Window};
 use fltk::app::{add_timeout3, App, event_key};
 use fltk::draw::{draw_rect_fill, draw_rect_with_color, Offscreen};
 use fltk::enums::{Color, Event, Key};
-use crate::tetris::tetris::{Action};
-use crate::tetris::tetris::Action::Down;
+use crate::tetris::{Action};
+use crate::tetris::Action::Down;
 
 pub struct Gui {}
 
