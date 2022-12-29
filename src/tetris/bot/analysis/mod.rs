@@ -5,7 +5,7 @@ pub struct DeadBlocksAnalysis {
     max_height: u8,
 }
 
-fn analyse_dead_blocks(tetris: &Tetris) -> DeadBlocksAnalysis {
+pub fn analyse_dead_blocks(tetris: &Tetris) -> DeadBlocksAnalysis {
     let mut gaps = 0;
     let mut max_height = 0;
     for x in 0u8..10u8 {
@@ -33,13 +33,13 @@ fn analyse_dead_blocks(tetris: &Tetris) -> DeadBlocksAnalysis {
 #[cfg(test)]
 mod tests {
     use crate::tetris::Action::{Drop, Rotate};
-    use crate::tetris::Shape;
+    use crate::tetris::tests::tetris_with_only_j_shape;
     use super::*;
 
     #[test]
     fn should_indicate_no_gaps_when_no_dead_blocks() {
         // given
-        let tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let tetris = tetris_with_only_j_shape();
 
         // when
         let analysis = analyse_dead_blocks(&tetris);
@@ -51,8 +51,8 @@ mod tests {
     #[test]
     fn should_indicate_no_gaps_when_there_are_none() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Drop);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Drop);
 
         // when
         let analysis = analyse_dead_blocks(&tetris);
@@ -64,10 +64,10 @@ mod tests {
     #[test]
     fn should_indicate_correct_number_of_gaps() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Rotate);
-        tetris.input(Rotate);
-        tetris.input(Drop);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Rotate);
+        tetris.input(&Rotate);
+        tetris.input(&Drop);
 
         // when
         let analysis = analyse_dead_blocks(&tetris);
@@ -79,7 +79,7 @@ mod tests {
     #[test]
     fn should_indicate_zero_max_height_when_no_dead_blocks() {
         // given
-        let tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let tetris = tetris_with_only_j_shape();
 
         // when
         let analysis = analyse_dead_blocks(&tetris);
@@ -91,8 +91,8 @@ mod tests {
     #[test]
     fn should_indicate_correct_max_height() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Drop);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Drop);
 
         // when
         let analysis = analyse_dead_blocks(&tetris);

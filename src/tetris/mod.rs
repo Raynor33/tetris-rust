@@ -14,6 +14,7 @@ pub enum Action {
     Drop,
 }
 
+#[derive(Copy, Clone)]
 struct Block {
     x: i8,
     y: i8,
@@ -31,6 +32,7 @@ impl Block {
     }
 }
 
+#[derive(Copy, Clone)]
 struct Shape {
     base_rotations: [[Block; 4]; 4],
 }
@@ -178,7 +180,7 @@ pub enum ActionResult {
 }
 
 pub struct Tetris {
-    shapes: Vec<Shape>,
+    shapes: [Shape; 7],
     rng: ThreadRng,
     die: Uniform<usize>,
     current_shapes_index: usize,
@@ -188,9 +190,26 @@ pub struct Tetris {
     dead_blocks: [[bool; 20]; 10],
 }
 
+impl Clone for Tetris {
+    fn clone(&self) -> Self {
+        let mut rng = rand::thread_rng();
+        let die = Uniform::from(0..self.shapes.len());
+        Tetris {
+            shapes: self.shapes,
+            rng,
+            die,
+            current_shapes_index: self.current_shapes_index,
+            current_shape_rotations: self.current_shape_rotations,
+            current_shape_x_diff: self.current_shape_x_diff,
+            current_shape_y_diff: self.current_shape_y_diff,
+            dead_blocks: self.dead_blocks
+        }
+    }
+}
+
 impl Tetris {
     pub fn new() -> Tetris {
-        Tetris::new_with_custom_shapes(vec![
+        Tetris::new_with_custom_shapes([
             Shape::o(),
             Shape::s(),
             Shape::z(),
@@ -201,7 +220,7 @@ impl Tetris {
         ])
     }
 
-    fn new_with_custom_shapes(shapes: Vec<Shape>) -> Tetris {
+    fn new_with_custom_shapes(shapes: [Shape; 7]) -> Tetris {
         let shapes_count = shapes.len();
         let mut rng = rand::thread_rng();
         let die = Uniform::from(0..shapes_count);
@@ -287,7 +306,7 @@ impl Tetris {
     }
 
     #[allow(unused_qualifications)]
-    pub fn input(&mut self, action: Action) -> ActionResult {
+    pub fn input(&mut self, action: &Action) -> ActionResult {
         match action {
             Action::Left => {
                 self.validate_and_place(self.current_shape_rotations, self.current_shape_x_diff - 1, self.current_shape_y_diff)
@@ -303,7 +322,7 @@ impl Tetris {
             }
             Action::Drop => {
                 loop {
-                    let result = self.input(Down);
+                    let result = self.input(&Down);
                     if self.current_shape_y_diff == 0 {
                         return result
                     }
@@ -348,10 +367,14 @@ mod tests {
         blocks_string
     }
 
+    pub fn tetris_with_only_j_shape() -> Tetris {
+        Tetris::new_with_custom_shapes([Shape::j(), Shape::j(), Shape::j(), Shape::j(), Shape::j(), Shape::j(), Shape::j()])
+    }
+
     #[test]
     fn should_start_with_a_shape() {
         // given
-        let tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let tetris = tetris_with_only_j_shape();
 
         // when / then
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -364,10 +387,10 @@ mod tests {
     #[test]
     fn should_move_shape_left() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
 
         // when / then
-        let result = tetris.input(Left);
+        let result = tetris.input(&Left);
 
         assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -380,10 +403,10 @@ mod tests {
     #[test]
     fn should_move_shape_right() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
 
         // when / then
-        let result = tetris.input(Right);
+        let result = tetris.input(&Right);
 
         assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -396,10 +419,10 @@ mod tests {
     #[test]
     fn should_move_shape_down() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
 
         // when / then
-        let result = tetris.input(Down);
+        let result = tetris.input(&Down);
 
         assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -412,10 +435,10 @@ mod tests {
     #[test]
     fn should_rotate_shape() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
 
         // when / then
-        let result = tetris.input(Rotate);
+        let result = tetris.input(&Rotate);
 
         assert_eq!(ActionResult::CurrentShape, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -428,13 +451,13 @@ mod tests {
     #[test]
     fn should_not_move_shape_left_off_the_grid() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Left);
-        tetris.input(Left);
-        tetris.input(Left);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
 
         // when / then
-        let result = tetris.input(Left);
+        let result = tetris.input(&Left);
 
         assert_eq!(ActionResult::Invalid, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -447,14 +470,14 @@ mod tests {
     #[test]
     fn should_not_move_shape_right_off_the_grid() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Right);
-        tetris.input(Right);
-        tetris.input(Right);
-        tetris.input(Right);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Right);
+        tetris.input(&Right);
+        tetris.input(&Right);
+        tetris.input(&Right);
 
         // when / then
-        let result = tetris.input(Right);
+        let result = tetris.input(&Right);
 
         assert_eq!(ActionResult::Invalid, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -467,15 +490,15 @@ mod tests {
     #[test]
     fn should_not_rotate_shape_off_the_grid() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Rotate);
-        tetris.input(Left);
-        tetris.input(Left);
-        tetris.input(Left);
-        tetris.input(Left);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Rotate);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
 
         // when / then
-        let result = tetris.input(Rotate);
+        let result = tetris.input(&Rotate);
 
         assert_eq!(ActionResult::Invalid, result);
         assert_eq!(4, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -488,18 +511,18 @@ mod tests {
     #[test]
     fn should_not_move_shape_left_into_dead_blocks() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
         for _ in 0..9 {
-            tetris.input(Left);
-            tetris.input(Left);
-            tetris.input(Left);
-            tetris.input(Drop);
+            tetris.input(&Left);
+            tetris.input(&Left);
+            tetris.input(&Left);
+            tetris.input(&Drop);
         }
-        tetris.input(Down);
-        tetris.input(Down);
+        tetris.input(&Down);
+        tetris.input(&Down);
 
         // when / then
-        let result = tetris.input(Left);
+        let result = tetris.input(&Left);
 
         assert_eq!(ActionResult::Invalid, result);
         assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -512,18 +535,18 @@ mod tests {
     #[test]
     fn should_not_move_shape_right_into_dead_blocks() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
         for _ in 0..9 {
-            tetris.input(Right);
-            tetris.input(Right);
-            tetris.input(Right);
-            tetris.input(Drop);
+            tetris.input(&Right);
+            tetris.input(&Right);
+            tetris.input(&Right);
+            tetris.input(&Drop);
         }
-        tetris.input(Down);
-        tetris.input(Down);
+        tetris.input(&Down);
+        tetris.input(&Down);
 
         // when / then
-        let result = tetris.input(Right);
+        let result = tetris.input(&Right);
 
         assert_eq!(ActionResult::Invalid, result);
         assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -536,22 +559,22 @@ mod tests {
     #[test]
     fn should_not_rotate_shape_into_dead_blocks() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
         for _ in 0..9 {
-            tetris.input(Right);
-            tetris.input(Right);
-            tetris.input(Right);
-            tetris.input(Drop);
+            tetris.input(&Right);
+            tetris.input(&Right);
+            tetris.input(&Right);
+            tetris.input(&Drop);
         }
-        tetris.input(Rotate);
-        tetris.input(Rotate);
-        tetris.input(Rotate);
-        tetris.input(Right);
-        tetris.input(Down);
-        tetris.input(Down);
+        tetris.input(&Rotate);
+        tetris.input(&Rotate);
+        tetris.input(&Rotate);
+        tetris.input(&Right);
+        tetris.input(&Down);
+        tetris.input(&Down);
 
         // when / then
-        let result = tetris.input(Rotate);
+        let result = tetris.input(&Rotate);
 
         assert_eq!(ActionResult::Invalid, result);
         assert_eq!(40, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -565,13 +588,13 @@ mod tests {
     #[test]
     fn should_add_a_new_shape_when_current_shape_reaches_the_bottom() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
         for _ in 0..17 {
-            tetris.input(Down);
+            tetris.input(&Down);
         }
 
         // when / then
-        let result = tetris.input(Down);
+        let result = tetris.input(&Down);
 
         assert_eq!(ActionResult::NextShape, result);
         assert_eq!(8, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -588,16 +611,16 @@ mod tests {
     #[test]
     fn should_add_a_new_shape_when_current_shape_reaches_dead_blocks() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
         for _ in 0..18 {
-            tetris.input(Down);
+            tetris.input(&Down);
         }
         for _ in 0..15 {
-            tetris.input(Down);
+            tetris.input(&Down);
         }
 
         // when / then
-        let result = tetris.input(Down);
+        let result = tetris.input(&Down);
 
         assert_eq!(ActionResult::NextShape, result);
         assert_eq!(12, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -618,10 +641,10 @@ mod tests {
     #[test]
     fn should_drop_to_the_bottom() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
 
         // when / then
-        let result = tetris.input(Drop);
+        let result = tetris.input(&Drop);
 
         assert_eq!(ActionResult::NextShape, result);
         assert_eq!(8, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -638,11 +661,11 @@ mod tests {
     #[test]
     fn should_drop_to_dead_blocks() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Drop);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Drop);
 
         // when / then
-        let result = tetris.input(Drop);
+        let result = tetris.input(&Drop);
 
         assert_eq!(ActionResult::NextShape, result);
         assert_eq!(12, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -663,28 +686,28 @@ mod tests {
     #[test]
     fn should_complete_a_line() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
-        tetris.input(Left);
-        tetris.input(Left);
-        tetris.input(Left);
-        tetris.input(Drop);
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Drop);
 
-        tetris.input(Drop);
+        tetris.input(&Drop);
 
-        tetris.input(Right);
-        tetris.input(Right);
-        tetris.input(Right);
-        tetris.input(Drop);
+        tetris.input(&Right);
+        tetris.input(&Right);
+        tetris.input(&Right);
+        tetris.input(&Drop);
 
-        tetris.input(Rotate);
-        tetris.input(Rotate);
-        tetris.input(Right);
-        tetris.input(Right);
-        tetris.input(Right);
-        tetris.input(Right);
+        tetris.input(&Rotate);
+        tetris.input(&Rotate);
+        tetris.input(&Right);
+        tetris.input(&Right);
+        tetris.input(&Right);
+        tetris.input(&Right);
 
         // when / then
-        let result = tetris.input(Drop);
+        let result = tetris.input(&Drop);
 
         assert_eq!(ActionResult::NextShape, result);
         assert_eq!(10, count_blocks(&tetris), "\n{}", blocks_as_string(&tetris));
@@ -703,13 +726,13 @@ mod tests {
     #[test]
     fn should_complete_a_game() {
         // given
-        let mut tetris = Tetris::new_with_custom_shapes(vec![Shape::j()]);
+        let mut tetris = tetris_with_only_j_shape();
         for _ in 0..8 {
-            tetris.input(Drop);
+            tetris.input(&Drop);
         }
 
         // when / then
-        let result = tetris.input(Drop);
+        let result = tetris.input(&Drop);
 
         assert_eq!(ActionResult::GameOver, result);
     }

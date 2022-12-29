@@ -11,7 +11,7 @@ use crate::tetris::Action::Down;
 pub struct Gui {}
 
 impl Gui {
-    pub fn launch(action_sender: Sender<Action>, blocks_receiver: Receiver<[[bool; 20]; 10]>) {
+    pub fn launch(action_sender: Sender<Action>, blocks_receiver: Receiver<[[bool; 20]; 10]>, headless: bool) {
         let app = App::default();
         let mut window = Window::default()
             .with_size(200, 400)
@@ -36,32 +36,34 @@ impl Gui {
         add_timeout3(0.3, callback);
 
 
-        window.handle(move |_, event| {
-            match event {
-                Event::KeyDown => {
-                    match event_key() {
-                        Key::Up => {
-                            key_event_sender.send(Action::Rotate).unwrap();
-                            true
+        if !headless {
+            window.handle(move |_, event| {
+                match event {
+                    Event::KeyDown => {
+                        match event_key() {
+                            Key::Up => {
+                                key_event_sender.send(Action::Rotate).unwrap();
+                                true
+                            }
+                            Key::Left => {
+                                key_event_sender.send(Action::Left).unwrap();
+                                true
+                            }
+                            Key::Right => {
+                                key_event_sender.send(Action::Right).unwrap();
+                                true
+                            }
+                            Key::Down => {
+                                key_event_sender.send(Action::Drop).unwrap();
+                                true
+                            }
+                            _ => false,
                         }
-                        Key::Left => {
-                            key_event_sender.send(Action::Left).unwrap();
-                            true
-                        }
-                        Key::Right => {
-                            key_event_sender.send(Action::Right).unwrap();
-                            true
-                        }
-                        Key::Down => {
-                            key_event_sender.send(Action::Drop).unwrap();
-                            true
-                        }
-                        _ => false,
                     }
+                    _ => false,
                 }
-                _ => false,
-            }
-        });
+            });
+        }
         let offs = Offscreen::new(frame.width(), frame.height()).unwrap();
         offs.begin();
         draw_rect_fill(0, 0, 200, 400, Color::White);

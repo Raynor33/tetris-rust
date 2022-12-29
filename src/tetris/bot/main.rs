@@ -2,7 +2,7 @@ extern crate core;
 
 use clap::Parser;
 use tetris_rust::tetris::bot::Bot;
-use tetris_rust::tetris::bot::strategy::always_drop::AlwaysDrop;
+use tetris_rust::tetris::bot::strategy::random::Random;
 
 #[derive(Parser)]
 struct BotArgs {
@@ -13,8 +13,8 @@ struct BotArgs {
 
 fn main() {
     let bot_args = BotArgs::parse();
-    if bot_args.strategy == "always_drop" {
-        Bot::new().run(&AlwaysDrop::new())
+    if bot_args.strategy == "random" {
+        Bot::new().run(&Random::new())
     } else {
         panic!("not a known strategy")
     }

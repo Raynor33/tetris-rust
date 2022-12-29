@@ -1,5 +1,6 @@
 use crate::tetris::bot::strategy::Strategy;
 use crate::tetris::{ActionResult, Tetris};
+use crate::tetris::Action::Drop;
 
 pub mod analysis;
 
@@ -15,10 +16,12 @@ impl Bot {
     pub fn run(&self, strategy: &dyn Strategy) {
         let mut tetris = Tetris::new();
         let mut shape_count = 0;
+        // TODO
+        let all_action_sequences = vec![vec![Drop]];
         loop {
             shape_count = shape_count + 1;
-            let actions = strategy.shape_actions(&tetris);
-            for action in actions {
+            let chosen_actions_index = strategy.current_shape_actions(&tetris, &all_action_sequences);
+            for action in all_action_sequences.get(chosen_actions_index).unwrap() {
                 let result = tetris.input(action);
                 if result == ActionResult::NextShape {
                     // this could happen if not all actions are required to reach the next shape

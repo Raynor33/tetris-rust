@@ -10,7 +10,7 @@ fn main() {
     thread::spawn(move || {
         let mut tetris = Tetris::new();
         loop {
-            let result = tetris.input(action_receiver.recv().unwrap());
+            let result = tetris.input(&action_receiver.recv().unwrap());
 
             let mut blocks = [[false; 20]; 10];
             for x in 0i8..10i8 {
@@ -25,5 +25,5 @@ fn main() {
             }
         }
     });
-    Gui::launch(action_sender, blocks_receiver);
+    Gui::launch(action_sender, blocks_receiver, false);
 }
