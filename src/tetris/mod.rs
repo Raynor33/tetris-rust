@@ -1,6 +1,6 @@
 pub mod gui;
 
-pub mod analysis;
+pub mod bot;
 
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
