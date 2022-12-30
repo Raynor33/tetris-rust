@@ -6,6 +6,7 @@ use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
 use crate::tetris::Action::Down;
 
+#[derive(Debug, PartialEq)]
 pub enum Action {
     Left,
     Right,
@@ -15,13 +16,13 @@ pub enum Action {
 }
 
 #[derive(Copy, Clone)]
-struct Block {
+pub struct Block {
     x: i8,
     y: i8,
 }
 
 impl Block {
-    fn new(x: i8, y: i8) -> Block {
+    pub fn new(x: i8, y: i8) -> Block {
         Block { x, y }
     }
     fn x(&self) -> i8 {
