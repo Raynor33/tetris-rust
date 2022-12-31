@@ -1,8 +1,8 @@
 use crate::tetris::Tetris;
 
 pub struct DeadBlocksAnalysis {
-    gaps: u8,
-    max_height: u8,
+    pub gaps: u8,
+    pub max_height: u8,
 }
 
 pub fn analyse_dead_blocks(tetris: &Tetris) -> DeadBlocksAnalysis {

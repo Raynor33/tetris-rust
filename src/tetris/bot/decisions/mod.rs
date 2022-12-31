@@ -80,7 +80,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(3, 18),
                     Block::new(3, 19),
@@ -113,7 +113,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(4, 17),
                     Block::new(5, 17),
@@ -146,7 +146,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(4, 17),
                     Block::new(3, 19),
@@ -179,7 +179,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(2, 18),
                     Block::new(2, 19),
@@ -212,7 +212,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(0, 18),
                     Block::new(0, 19),
@@ -245,7 +245,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(4, 18),
                     Block::new(4, 19),
@@ -278,7 +278,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(7, 18),
                     Block::new(7, 19),
@@ -311,7 +311,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(0, 17),
                     Block::new(1, 17),
@@ -344,7 +344,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn score(&self, outcome: &Tetris) -> f32 {
+            fn score(&self, outcome: &Tetris) -> f64 {
                 if has_blocks_at(outcome, [
                     Block::new(8, 17),
                     Block::new(9, 17),

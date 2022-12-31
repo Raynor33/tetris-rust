@@ -6,7 +6,7 @@ pub struct Random {
 }
 
 impl Strategy for Random {
-    fn score(&self, _: &Tetris) -> f32 {
+    fn score(&self, _: &Tetris) -> f64 {
         let mut rng = rand::thread_rng();
         rng.gen_range(0.0..1.0)
     }
