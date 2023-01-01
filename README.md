@@ -10,15 +10,15 @@ cargo test
 cargo build --release
 ```
 
-## Executing
+## Running...
 
-### The game
+### ...the game
 ```shell
 target/release/game
 ```
 
-### A bot
+### ...a bot
 Runs a bot which uses the given strategy (see code for allowed values), eg
 ```shell
-target/release/bot --strategy fixed --action_pause 10 --debug
+target/release/bot --strategy fixed --action-pause 10 --debug
 ```
