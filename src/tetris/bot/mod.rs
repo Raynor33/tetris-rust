@@ -35,10 +35,9 @@ impl Bot {
                     println!("Game completed after {} shapes handled", shape_count);
                     return;
                 }
-            }
-            if debug {
-                let blocks_string = Self::blocks_as_string(&mut tetris);
-                println!("{}", blocks_string)
+                if debug {
+                    println!("{}", Self::blocks_as_string(&mut tetris))
+                }
             }
         }
     }

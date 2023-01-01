@@ -12,9 +12,9 @@ impl Strategy for Fixed {
         // } else {
         //     100000000.0 * (20.0 - (analysis.max_height as f64))
         // };
-        let deep_hole_score = 100.0 * (200.0 - (analysis.deep_hole_blocks as f64));
+        let total_neighbour_diff_score = 100.0 * (200.0 - (analysis.total_neighbour_diff as f64));
         let gaps_score = 100000.0 * (200.0 - (analysis.gaps as f64));
-        height_score + deep_hole_score + gaps_score
+        height_score + total_neighbour_diff_score + gaps_score
     }
 }
 
