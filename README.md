@@ -18,7 +18,7 @@ target/release/game
 ```
 
 ### A bot
-Runs a bot which uses the given strategy (see code for allowed values)
+Runs a bot which uses the given strategy (see code for allowed values), eg
 ```shell
-target/release/bot --strategy nogaps --action_pause 10
+target/release/bot --strategy fixed --action_pause 10 --debug
 ```

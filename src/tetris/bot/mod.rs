@@ -14,7 +14,7 @@ impl Bot {
         Bot {}
     }
 
-    pub fn run(&self, strategy: &dyn Strategy, action_pause: u64) {
+    pub fn run(&self, strategy: &dyn Strategy, action_pause: u64, debug: bool) {
         let mut tetris = Tetris::new();
         let mut shape_count = 0;
         loop {
@@ -36,8 +36,10 @@ impl Bot {
                     return;
                 }
             }
-            let blocks_string = Self::blocks_as_string(&mut tetris);
-            println!("{}", blocks_string)
+            if debug {
+                let blocks_string = Self::blocks_as_string(&mut tetris);
+                println!("{}", blocks_string)
+            }
         }
     }
 
