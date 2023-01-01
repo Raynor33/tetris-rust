@@ -4,6 +4,7 @@ pub struct Analysis {
     pub gaps: u8,
     pub max_height: u8,
     pub total_neighbour_diff: u8,
+    pub convexity: u8
 }
 
 pub fn analyse(tetris: &Tetris) -> Analysis {
@@ -12,6 +13,8 @@ pub fn analyse(tetris: &Tetris) -> Analysis {
     let mut total_neighbour_diff = 0;
     let mut previous_column_height = 0;
     let mut current_column_height;
+    let mut outer_total_height = 0;
+    let mut inner_total_height = 0;
     for x in 0u8..10u8 {
         current_column_height = 0;
         let mut column_has_higher_block = false;
@@ -33,14 +36,29 @@ pub fn analyse(tetris: &Tetris) -> Analysis {
                     total_neighbour_diff = total_neighbour_diff + current_column_height.abs_diff(previous_column_height);
                 }
                 previous_column_height = current_column_height;
+                if x < 2 || x > 7 {
+                    outer_total_height = outer_total_height + current_column_height;
+                } else if x > 2 && x < 7 {
+                    inner_total_height = inner_total_height + current_column_height;
+                } else {
+                    outer_total_height = outer_total_height + current_column_height / 2;
+                    inner_total_height = inner_total_height + current_column_height / 2;
+                }
             }
         }
     }
+
+    let convexity = if inner_total_height > outer_total_height {
+        inner_total_height - outer_total_height
+    } else {
+        0
+    };
 
     Analysis {
         gaps,
         max_height,
         total_neighbour_diff,
+        convexity
     }
 }
 
@@ -138,5 +156,48 @@ mod tests {
 
         // then
         assert_eq!(4, analysis.total_neighbour_diff);
+    }
+
+    #[test]
+    fn should_indicate_zero_convexity_when_no_dead_blocks() {
+        // given
+        let mut tetris = tetris_with_only_j_shape();
+
+        // when
+        let analysis = analyse(&tetris);
+
+        // then
+        assert_eq!(0, analysis.convexity);
+    }
+
+    #[test]
+    fn should_indicate_correct_convexity_when_convex() {
+        // given
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Drop);
+
+        // when
+        let analysis = analyse(&tetris);
+
+        // then
+        assert_eq!(4, analysis.convexity);
+    }
+
+    #[test]
+    fn should_indicate_correct_convexity_when_not_convex() {
+        // given
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Rotate);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Drop);
+
+        // when
+        let analysis = analyse(&tetris);
+
+        // then
+        assert_eq!(0, analysis.convexity);
     }
 }
