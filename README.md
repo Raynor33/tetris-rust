@@ -20,5 +20,5 @@ target/release/game
 ### ...a bot
 Runs a bot which uses the given strategy (see code for allowed values), eg
 ```shell
-target/release/bot --strategy fixed --action-pause 10 --debug
+target/release/bot --strategy weighted --action-pause 10 --debug
 ```

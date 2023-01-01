@@ -32,6 +32,7 @@ impl Bot {
                     break;
                 }
                 if result == ActionResult::GameOver {
+                    println!("{}", Self::blocks_as_string(&mut tetris));
                     println!("Game completed after {} shapes handled", shape_count);
                     return;
                 }

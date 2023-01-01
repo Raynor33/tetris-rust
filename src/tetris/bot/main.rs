@@ -2,8 +2,8 @@ extern crate core;
 
 use clap::Parser;
 use tetris_rust::tetris::bot::Bot;
-use tetris_rust::tetris::bot::strategy::fixed::Fixed;
 use tetris_rust::tetris::bot::strategy::random::Random;
+use tetris_rust::tetris::bot::strategy::weighted::Weighted;
 
 #[derive(Parser)]
 struct BotArgs {
@@ -21,8 +21,8 @@ fn main() {
     if bot_args.strategy == "random" {
         Bot::new().run(&Random::new(), bot_args.action_pause, bot_args.debug)
     }
-    else if bot_args.strategy == "fixed" {
-        Bot::new().run(&Fixed::new(), bot_args.action_pause, bot_args.debug)
+    else if bot_args.strategy == "weighted" {
+        Bot::new().run(&Weighted::new(), bot_args.action_pause, bot_args.debug)
     } else {
         panic!("not a known strategy")
     }
