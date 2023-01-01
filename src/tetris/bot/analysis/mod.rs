@@ -9,37 +9,38 @@ pub struct Analysis {
 pub fn analyse(tetris: &Tetris) -> Analysis {
     let mut gaps = 0;
     let mut max_height = 0;
-    let mut column_heights: [u8; 10] = [0; 10];
+    let mut total_neighbour_diff = 0;
+    let mut previous_column_height = 0;
+    let mut current_column_height;
     for x in 0u8..10u8 {
+        current_column_height = 0;
         let mut column_has_higher_block = false;
         for y in 0u8..20u8 {
             let block_present = tetris.dead_blocks[usize::from(x)][usize::from(y)];
             if block_present {
-                let height = 20 - y;
-                if max_height < height {
-                    max_height = height;
+                if max_height < current_column_height {
+                    max_height = current_column_height;
                 }
                 if column_has_higher_block == false {
-                    column_heights[usize::from(x)] = 20 - y;
-                    column_has_higher_block = true;
+                    current_column_height = 20 - y;
                 }
+                column_has_higher_block = true;
             } else if column_has_higher_block {
                 gaps = gaps + 1;
             }
+            if y == 19 {
+                if x > 0 {
+                    total_neighbour_diff = total_neighbour_diff + current_column_height.abs_diff(previous_column_height);
+                }
+                previous_column_height = current_column_height;
+            }
         }
-    }
-    let mut total_neighbour_diff = 0;
-    for i in 1usize..10usize {
-        let previous_column_height = column_heights.get(i - 1).unwrap();
-        let column_height = column_heights.get(i).unwrap();
-        let absolute_diff = column_height.abs_diff(*previous_column_height);
-        total_neighbour_diff = total_neighbour_diff + absolute_diff;
     }
 
     Analysis {
         gaps,
         max_height,
-        total_neighbour_diff
+        total_neighbour_diff,
     }
 }
 
