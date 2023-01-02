@@ -4,7 +4,7 @@ pub struct Analysis {
     pub gaps: u8,
     pub max_height: u8,
     pub total_neighbour_diff: u8,
-    pub convexity: u8
+    pub low_edges: u8
 }
 
 pub fn analyse(tetris: &Tetris) -> Analysis {
@@ -13,8 +13,7 @@ pub fn analyse(tetris: &Tetris) -> Analysis {
     let mut total_neighbour_diff = 0;
     let mut previous_column_height = 0;
     let mut current_column_height;
-    let mut outer_total_height = 0;
-    let mut inner_total_height = 0;
+    let mut low_edges = 0;
     for x in 0u8..10u8 {
         current_column_height = 0;
         let mut column_has_higher_block = false;
@@ -35,30 +34,21 @@ pub fn analyse(tetris: &Tetris) -> Analysis {
                 if x > 0 {
                     total_neighbour_diff = total_neighbour_diff + current_column_height.abs_diff(previous_column_height);
                 }
-                previous_column_height = current_column_height;
-                if x < 2 || x > 7 {
-                    outer_total_height = outer_total_height + current_column_height;
-                } else if x > 2 && x < 7 {
-                    inner_total_height = inner_total_height + current_column_height;
-                } else {
-                    outer_total_height = outer_total_height + current_column_height / 2;
-                    inner_total_height = inner_total_height + current_column_height / 2;
+                if x == 1 && current_column_height > previous_column_height + 1 {
+                    low_edges = low_edges + current_column_height - previous_column_height;
+                } else if x == 9 && previous_column_height > current_column_height + 1 {
+                    low_edges = low_edges + previous_column_height - current_column_height;
                 }
+                previous_column_height = current_column_height;
             }
         }
     }
-
-    let convexity = if inner_total_height > outer_total_height {
-        inner_total_height - outer_total_height
-    } else {
-        0
-    };
 
     Analysis {
         gaps,
         max_height,
         total_neighbour_diff,
-        convexity
+        low_edges
     }
 }
 
@@ -159,7 +149,7 @@ mod tests {
     }
 
     #[test]
-    fn should_indicate_zero_convexity_when_no_dead_blocks() {
+    fn should_indicate_zero_low_edges_when_no_dead_blocks() {
         // given
         let mut tetris = tetris_with_only_j_shape();
 
@@ -167,29 +157,29 @@ mod tests {
         let analysis = analyse(&tetris);
 
         // then
-        assert_eq!(0, analysis.convexity);
+        assert_eq!(0, analysis.low_edges);
     }
 
     #[test]
-    fn should_indicate_correct_convexity_when_convex() {
+    fn should_indicate_zero_low_edges_when_there_are_none() {
         // given
         let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Right);
+        tetris.input(&Right);
+        tetris.input(&Right);
         tetris.input(&Drop);
 
         // when
         let analysis = analyse(&tetris);
 
         // then
-        assert_eq!(4, analysis.convexity);
+        assert_eq!(0, analysis.low_edges);
     }
 
     #[test]
-    fn should_indicate_correct_convexity_when_not_convex() {
+    fn should_indicate_correct_low_edges() {
         // given
         let mut tetris = tetris_with_only_j_shape();
-        tetris.input(&Rotate);
-        tetris.input(&Left);
-        tetris.input(&Left);
         tetris.input(&Left);
         tetris.input(&Left);
         tetris.input(&Drop);
@@ -198,6 +188,6 @@ mod tests {
         let analysis = analyse(&tetris);
 
         // then
-        assert_eq!(0, analysis.convexity);
+        assert_eq!(2, analysis.low_edges);
     }
 }
