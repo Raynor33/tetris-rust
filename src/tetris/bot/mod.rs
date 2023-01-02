@@ -1,4 +1,6 @@
 use std::{thread, time};
+use std::io::{stdout, Write};
+use crossterm::{cursor, ExecutableCommand, QueueableCommand, terminal};
 use crate::tetris::bot::strategy::Strategy;
 use crate::tetris::{ActionResult, Tetris};
 use crate::tetris::bot::decisions::Decisions;
@@ -32,18 +34,20 @@ impl Bot {
                     break;
                 }
                 if result == ActionResult::GameOver {
-                    println!("{}", Self::blocks_as_string(&mut tetris));
+                    Bot::draw(&tetris);
                     println!("Game completed after {} shapes handled", shape_count);
+                    stdout().execute(cursor::Show).unwrap();
                     return;
                 }
                 if debug {
-                    println!("{}", Self::blocks_as_string(&mut tetris))
+                    Bot::draw(&tetris);
                 }
             }
         }
     }
 
-    fn blocks_as_string(tetris: &mut Tetris) -> String {
+    fn draw(tetris: &Tetris) {
+
         let mut blocks_string = String::new();
         blocks_string.push_str(" ---------- \n");
         for y in 0..20 {
@@ -57,7 +61,14 @@ impl Bot {
             }
             blocks_string.push_str("|\n");
         }
-        blocks_string.push_str(" ---------- ");
-        blocks_string
+        blocks_string.push_str(" ---------- \n");
+
+        let mut stdout = stdout();
+        stdout.execute(cursor::Hide).unwrap();
+        stdout.execute(cursor::MoveToRow(0)).unwrap();
+        stdout.execute(cursor::MoveToColumn(0)).unwrap();
+        stdout.queue(terminal::Clear(terminal::ClearType::FromCursorDown)).unwrap();
+        stdout.write_all(blocks_string.as_bytes()).unwrap();
+        stdout.flush().unwrap();
     }
 }
