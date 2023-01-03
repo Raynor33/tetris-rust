@@ -2,14 +2,14 @@ use crate::tetris::Tetris;
 
 pub struct Analysis {
     pub gaps: u8,
-    pub max_height: u8,
+    pub central_columns_max_height: u8,
     pub total_neighbour_diff: u8,
     pub low_edges: u8
 }
 
 pub fn analyse(tetris: &Tetris) -> Analysis {
     let mut gaps = 0;
-    let mut max_height = 0;
+    let mut central_columns_max_height = 0;
     let mut total_neighbour_diff = 0;
     let mut previous_column_height = 0;
     let mut current_column_height;
@@ -20,11 +20,11 @@ pub fn analyse(tetris: &Tetris) -> Analysis {
         for y in 0u8..20u8 {
             let block_present = tetris.dead_blocks[usize::from(x)][usize::from(y)];
             if block_present {
-                if max_height < current_column_height {
-                    max_height = current_column_height;
-                }
                 if column_has_higher_block == false {
                     current_column_height = 20 - y;
+                }
+                if x > 2 && x < 7 && central_columns_max_height < current_column_height {
+                    central_columns_max_height = current_column_height;
                 }
                 column_has_higher_block = true;
             } else if column_has_higher_block {
@@ -46,7 +46,7 @@ pub fn analyse(tetris: &Tetris) -> Analysis {
 
     Analysis {
         gaps,
-        max_height,
+        central_columns_max_height,
         total_neighbour_diff,
         low_edges
     }
@@ -107,11 +107,11 @@ mod tests {
         let analysis = analyse(&tetris);
 
         // then
-        assert_eq!(0, analysis.max_height);
+        assert_eq!(0, analysis.central_columns_max_height);
     }
 
     #[test]
-    fn should_indicate_correct_max_height() {
+    fn should_indicate_correct_central_columns_max_height() {
         // given
         let mut tetris = tetris_with_only_j_shape();
         tetris.input(&Drop);
@@ -120,7 +120,26 @@ mod tests {
         let analysis = analyse(&tetris);
 
         // then
-        assert_eq!(2, analysis.max_height);
+        assert_eq!(2, analysis.central_columns_max_height);
+    }
+
+    #[test]
+    fn should_ignore_edges_in_central_columns_max_height() {
+        // given
+        let mut tetris = tetris_with_only_j_shape();
+        tetris.input(&Drop);
+        tetris.input(&Rotate);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Left);
+        tetris.input(&Drop);
+
+        // when
+        let analysis = analyse(&tetris);
+
+        // then
+        assert_eq!(2, analysis.central_columns_max_height);
     }
 
     #[test]
