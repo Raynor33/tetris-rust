@@ -4,6 +4,7 @@ pub mod bot;
 
 use rand::distributions::{Distribution, Uniform};
 use rand::rngs::ThreadRng;
+use rand::{Rng, RngCore, thread_rng};
 use crate::tetris::Action::Down;
 
 #[derive(Debug, PartialEq)]
@@ -177,14 +178,13 @@ pub enum ActionResult {
     Invalid,
     CurrentShape,
     NextShape,
-    GameOver
+    GameOver,
 }
 
 pub struct Tetris {
+    shape_count: usize,
     shapes: [Shape; 7],
     rng: ThreadRng,
-    die: Uniform<usize>,
-    current_shapes_index: usize,
     current_shape_rotations: usize,
     current_shape_x_diff: i8,
     current_shape_y_diff: i8,
@@ -193,17 +193,15 @@ pub struct Tetris {
 
 impl Clone for Tetris {
     fn clone(&self) -> Self {
-        let mut rng = rand::thread_rng();
-        let die = Uniform::from(0..self.shapes.len());
+        let mut rng = thread_rng();
         Tetris {
+            shape_count: self.shape_count,
             shapes: self.shapes,
             rng,
-            die,
-            current_shapes_index: self.current_shapes_index,
             current_shape_rotations: self.current_shape_rotations,
             current_shape_x_diff: self.current_shape_x_diff,
             current_shape_y_diff: self.current_shape_y_diff,
-            dead_blocks: self.dead_blocks
+            dead_blocks: self.dead_blocks,
         }
     }
 }
@@ -222,15 +220,11 @@ impl Tetris {
     }
 
     fn new_with_custom_shapes(shapes: [Shape; 7]) -> Tetris {
-        let shapes_count = shapes.len();
-        let mut rng = rand::thread_rng();
-        let die = Uniform::from(0..shapes_count);
-        let i = die.sample(&mut rng);
+        let rng = thread_rng();
         Tetris {
+            shape_count: 0,
             shapes,
             rng,
-            die,
-            current_shapes_index: i,
             current_shape_rotations: 0,
             current_shape_x_diff: 0,
             current_shape_y_diff: 0,
@@ -240,51 +234,51 @@ impl Tetris {
 
     pub fn block_at(&self, x: i8, y: i8) -> bool {
         let is_dead_block = self.dead_blocks[usize::from(x.unsigned_abs())][usize::from(y.unsigned_abs())];
-        let is_current_shape = match self.shapes.get(self.current_shapes_index) {
-            Some(shape) => {
-                shape.has_block_at(x, y, self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff)
-            }
-            None => panic!("code error")
-        };
+        let shape = self.shapes[self.shape_count % 7];
+        let is_current_shape = shape.has_block_at(x, y, self.current_shape_rotations, self.current_shape_x_diff, self.current_shape_y_diff);
         is_dead_block || is_current_shape
     }
 
     fn validate_and_place(&mut self, rotations: usize, x_diff: i8, y_diff: i8) -> ActionResult {
-        match self.shapes.get(self.current_shapes_index) {
-            Some(shape) => {
-                let valid = !shape.is_off_grid(rotations, x_diff, y_diff) &&
-                    !shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff);
-                if valid {
-                    let shape_finished = shape.is_off_grid(rotations, x_diff, y_diff + 1) ||
-                        shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff + 1);
-                    if shape_finished {
-                        shape.apply_to(&mut self.dead_blocks, rotations, x_diff, y_diff);
-                        self.complete_lines();
-                        self.current_shapes_index = self.die.sample(&mut self.rng);
-                        self.current_shape_rotations = 0;
-                        self.current_shape_x_diff = 0;
-                        self.current_shape_y_diff = 0;
-                        match self.shapes.get(self.current_shapes_index) {
-                            Some(shape) => {
-                                if shape.intersects(&self.dead_blocks, 0, 0, 1) {
-                                    ActionResult::GameOver
-                                } else {
-                                    ActionResult::NextShape
-                                }
-                            }
-                            None => panic!("code error")
-                        }
-                    } else {
-                        self.current_shape_rotations = rotations;
-                        self.current_shape_x_diff = x_diff;
-                        self.current_shape_y_diff = y_diff;
-                        ActionResult::CurrentShape
-                    }
+        let shape = self.shapes[self.shape_count % 7];
+        let valid = !shape.is_off_grid(rotations, x_diff, y_diff) &&
+            !shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff);
+        if valid {
+            let shape_finished = shape.is_off_grid(rotations, x_diff, y_diff + 1) ||
+                shape.intersects(&self.dead_blocks, rotations, x_diff, y_diff + 1);
+            if shape_finished {
+                shape.apply_to(&mut self.dead_blocks, rotations, x_diff, y_diff);
+                self.complete_lines();
+                self.shape_count = self.shape_count + 1;
+                self.shuffle_shapes();
+                self.current_shape_rotations = 0;
+                self.current_shape_x_diff = 0;
+                self.current_shape_y_diff = 0;
+                let shape = self.shapes[self.shape_count % 7];
+                if shape.intersects(&self.dead_blocks, 0, 0, 1) {
+                    ActionResult::GameOver
                 } else {
-                    ActionResult::Invalid
+                    ActionResult::NextShape
                 }
+            } else {
+                self.current_shape_rotations = rotations;
+                self.current_shape_x_diff = x_diff;
+                self.current_shape_y_diff = y_diff;
+                ActionResult::CurrentShape
             }
-            None => panic!("code error")
+        } else {
+            ActionResult::Invalid
+        }
+    }
+
+    fn shuffle_shapes(&mut self) {
+        if self.shape_count % 7 == 0 {
+            for i in 0..self.shapes.len() - 2 {
+                let j = thread_rng().gen_range(0..i + 1);
+                let shape_from_i = self.shapes[i];
+                self.shapes[i] = self.shapes[j];
+                self.shapes[j] = shape_from_i;
+            }
         }
     }
 
@@ -325,7 +319,7 @@ impl Tetris {
                 loop {
                     let result = self.input(&Down);
                     if self.current_shape_y_diff == 0 {
-                        return result
+                        return result;
                     }
                 }
             }
