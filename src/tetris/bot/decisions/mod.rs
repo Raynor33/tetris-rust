@@ -18,7 +18,7 @@ impl Decisions {
                 let mut actions = vec![&Rotate; rotations];
                 actions.push(&Drop);
                 for i in 0..actions.len() {
-                    clone.input(actions.get(i).unwrap());
+                    clone.input(actions[i]);
                 }
                 let score = strategy.score(&clone);
                 if score > best_actions_score {
@@ -33,7 +33,7 @@ impl Decisions {
                     let mut actions = vec![&Rotate; rotations];
                     actions.append(&mut vec![action; shift]);
                     for i in 0..actions.len() {
-                        clone.input(actions.get(i).unwrap());
+                        clone.input(actions[i]);
                     }
                     let result = clone.input(action);
                     actions.push(action);
@@ -66,10 +66,10 @@ mod tests {
     use crate::tetris::Action::{Drop, Left, Right, Rotate};
 
     fn has_blocks_at(tetris: &Tetris, blocks: [Block; 4]) -> bool {
-        tetris.block_at(blocks.get(0).unwrap().x, blocks.get(0).unwrap().y) &&
-            tetris.block_at(blocks.get(1).unwrap().x, blocks.get(1).unwrap().y) &&
-            tetris.block_at(blocks.get(2).unwrap().x, blocks.get(2).unwrap().y) &&
-            tetris.block_at(blocks.get(3).unwrap().x, blocks.get(3).unwrap().y)
+        tetris.block_at(blocks[0].x, blocks[0].y) &&
+            tetris.block_at(blocks[1].x, blocks[1].y) &&
+            tetris.block_at(blocks[2].x, blocks[2].y) &&
+            tetris.block_at(blocks[3].x, blocks[3].y)
     }
 
     #[test]
