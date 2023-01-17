@@ -1,8 +1,9 @@
 use crate::tetris::bot::strategy::Strategy;
-use crate::tetris::{Tetris};
+use crate::tetris::{Action, Tetris};
 use crate::tetris::bot::analysis::analyse;
 
-pub struct Weighted {}
+pub struct Weighted {
+}
 
 impl Strategy for Weighted {
     fn score(&self, tetris: &Tetris) -> f64 {
@@ -19,6 +20,10 @@ impl Strategy for Weighted {
             total_neighbour_diff_score * total_neighbour_diff_weight +
             low_edges_score * low_edges_weight +
             gaps_score * gaps_weight
+    }
+
+    fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+        self.best_actions(tetris).0
     }
 }
 

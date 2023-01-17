@@ -3,10 +3,8 @@ use std::io::{stdout, Write};
 use crossterm::{cursor, ExecutableCommand, QueueableCommand, terminal};
 use crate::tetris::bot::strategy::Strategy;
 use crate::tetris::{ActionResult, Tetris};
-use crate::tetris::bot::decisions::Decisions;
 
 pub mod analysis;
-pub mod decisions;
 pub mod strategy;
 
 pub struct Bot {}
@@ -21,8 +19,7 @@ impl Bot {
         let mut shape_count = 0;
         loop {
             shape_count = shape_count + 1;
-            let decisions = Decisions::new();
-            let actions = decisions.choose_actions(&tetris, strategy);
+            let actions = strategy.choose_actions(&tetris);
             for action in actions {
                 if action_pause > 0 {
                     thread::sleep(time::Duration::from_millis(action_pause));
@@ -46,7 +43,6 @@ impl Bot {
     }
 
     fn draw(tetris: &Tetris) {
-
         let mut blocks_string = String::new();
         blocks_string.push_str(" ---------- \n");
         for y in 0..20 {
