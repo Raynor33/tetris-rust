@@ -2,6 +2,7 @@ use crate::tetris::{Action, Tetris};
 use crate::tetris::Action::{Drop, Left, Right, Rotate};
 use crate::tetris::ActionResult::Invalid;
 
+pub mod qlearning;
 pub mod weighted;
 
 pub trait Strategy {

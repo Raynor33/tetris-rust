@@ -2,6 +2,7 @@ extern crate core;
 
 use clap::Parser;
 use tetris_rust::tetris::bot::Bot;
+use tetris_rust::tetris::bot::strategy::qlearning::QLearning;
 use tetris_rust::tetris::bot::strategy::weighted::Weighted;
 
 #[derive(Parser)]
@@ -19,6 +20,9 @@ fn main() {
     let bot_args = BotArgs::parse();
     if bot_args.strategy == "weighted" {
         Bot::new().run(&Weighted::new(), bot_args.action_pause, bot_args.debug)
+    }
+    else if bot_args.strategy == "qlearning" {
+        Bot::new().run(&QLearning::new(), bot_args.action_pause, bot_args.debug)
     } else {
         panic!("not a known strategy")
     }
