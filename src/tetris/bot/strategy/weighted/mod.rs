@@ -1,11 +1,18 @@
-use crate::tetris::bot::strategy::Strategy;
-use crate::tetris::{Action, Tetris};
+use crate::tetris::bot::strategy::{BestActions, Strategy};
+use crate::tetris::{Action, ActionResult, Tetris};
 use crate::tetris::bot::analysis::analyse;
 
 pub struct Weighted {
 }
 
 impl Strategy for Weighted {
+    fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
+        self.best_actions(tetris).actions
+    }
+    fn best_actions(&self, tetris: &Tetris) -> BestActions {
+        todo!()
+    }
+
     fn score(&self, tetris: &Tetris) -> f64 {
         let analysis = analyse(tetris);
         let central_columns_height_score = if analysis.central_columns_max_height < 16 { 200.0 } else { 200.0 - (analysis.central_columns_max_height as f64) };
@@ -20,10 +27,6 @@ impl Strategy for Weighted {
             total_neighbour_diff_score * total_neighbour_diff_weight +
             low_edges_score * low_edges_weight +
             gaps_score * gaps_weight
-    }
-
-    fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
-        self.best_actions(tetris).0
     }
 }
 

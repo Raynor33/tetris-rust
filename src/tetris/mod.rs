@@ -7,7 +7,7 @@ use rand::rngs::ThreadRng;
 use rand::{Rng, RngCore, thread_rng};
 use crate::tetris::Action::Down;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Action {
     Left,
     Right,

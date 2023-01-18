@@ -1,25 +1,33 @@
-use crate::tetris::{Action, Tetris};
+use crate::tetris::{Action, ActionResult, Tetris};
 use crate::tetris::Action::{Drop, Left, Right, Rotate};
-use crate::tetris::ActionResult::Invalid;
+use crate::tetris::ActionResult::{Invalid, NextShape};
 
 pub mod qlearning;
+pub mod random;
 pub mod weighted;
 
+pub struct BestActions {
+    actions: Vec<Action>,
+    score: f64,
+    result: ActionResult
+}
+
 pub trait Strategy {
-    fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action>;
+    fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action>;
 
     fn score(&self, outcome: &Tetris) -> f64;
 
-    fn best_actions(&self, tetris: &Tetris) -> (Vec<&Action>, f64) {
-        let mut best_actions = vec![&Drop];
+    fn best_actions(&self, tetris: &Tetris) -> BestActions {
+        let mut best_actions = vec![Drop];
         let mut best_actions_score = 0.0;
+        let mut best_action_result = NextShape;
         for rotations in 0..4 {
             {
                 let mut clone = tetris.clone();
-                let mut actions = vec![&Rotate; rotations];
-                actions.push(&Drop);
+                let mut actions = vec![Rotate; rotations];
+                actions.push(Drop);
                 for i in 0..actions.len() {
-                    clone.input(actions[i]);
+                    clone.input(&actions[i]);
                 }
                 let score = self.score(&clone);
                 if score > best_actions_score {
@@ -27,33 +35,38 @@ pub trait Strategy {
                     best_actions_score = score;
                 }
             }
-            for action in [&Right, &Left] {
+            for action in [Right, Left] {
                 let mut shift = 0;
                 loop {
                     let mut clone = tetris.clone();
-                    let mut actions = vec![&Rotate; rotations];
+                    let mut actions = vec![Rotate; rotations];
                     actions.append(&mut vec![action; shift]);
                     for i in 0..actions.len() {
-                        clone.input(actions[i]);
+                        clone.input(&actions[i]);
                     }
-                    let result = clone.input(action);
+                    let result = clone.input(&action);
                     actions.push(action);
                     if result == Invalid {
                         break;
                     } else {
                         shift = shift + 1;
                         clone.input(&Drop);
-                        actions.push(&Drop);
+                        actions.push(Drop);
                         let score = self.score(&clone);
                         if score > best_actions_score {
                             best_actions = actions;
                             best_actions_score = score;
+                            best_action_result = result;
                         }
                     }
                 }
             }
         }
-        (best_actions, best_actions_score)
+        BestActions{
+            actions: best_actions,
+            score: best_actions_score,
+            result: best_action_result
+        }
     }
 }
 
@@ -80,7 +93,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
 
@@ -103,8 +116,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -115,7 +128,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -138,8 +151,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Rotate, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Rotate, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -150,7 +163,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -173,8 +186,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Rotate, &Rotate, &Rotate, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Rotate, Rotate, Rotate, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -185,7 +198,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -208,8 +221,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Left, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Left, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -220,7 +233,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -243,8 +256,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Left, &Left, &Left, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Left, Left, Left, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -255,7 +268,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -278,8 +291,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Right, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Right, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -290,7 +303,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -313,8 +326,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Right, &Right, &Right, &Right, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Right, Right, Right, Right, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -325,7 +338,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -348,8 +361,8 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Rotate, &Left, &Left, &Left, &Left, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Rotate, Left, Left, Left, Left, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 
     #[test]
@@ -360,7 +373,7 @@ mod tests {
         // and
         struct TestStrategy {}
         impl Strategy for TestStrategy {
-            fn choose_actions(&self, tetris: &Tetris) -> Vec<&Action> {
+            fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
                 todo!()
             }
             fn score(&self, outcome: &Tetris) -> f64 {
@@ -383,7 +396,7 @@ mod tests {
         let actions = strategy.best_actions(&tetris);
 
         // then
-        let expected_actions = vec![&Rotate, &Right, &Right, &Right, &Right, &Drop];
-        assert_eq!(expected_actions[..], actions.0[..]);
+        let expected_actions = vec![Rotate, Right, Right, Right, Right, Drop];
+        assert_eq!(expected_actions[..], actions.actions[..]);
     }
 }

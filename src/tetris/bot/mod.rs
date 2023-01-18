@@ -14,13 +14,13 @@ impl Bot {
         Bot {}
     }
 
-    pub fn run(&self, strategy: &dyn Strategy, action_pause: u64, debug: bool, games: u32) {
-        for game in 0..games {
+    pub fn run(&self, strategy: &mut dyn Strategy, action_pause: u64, debug: bool, games: u32) {
+        for _ in 0..games {
             self.do_game(strategy, action_pause, debug)
         }
     }
 
-    pub fn do_game(&self, strategy: &dyn Strategy, action_pause: u64, debug: bool) {
+    pub fn do_game(&self, strategy: &mut dyn Strategy, action_pause: u64, debug: bool) {
         let mut tetris = Tetris::new();
         let mut shape_count = 0;
         loop {
@@ -30,7 +30,7 @@ impl Bot {
                 if action_pause > 0 {
                     thread::sleep(time::Duration::from_millis(action_pause));
                 }
-                let result = tetris.input(action);
+                let result = tetris.input(&action);
                 if debug {
                     Bot::draw(&tetris);
                 }

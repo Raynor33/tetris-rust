@@ -24,10 +24,10 @@ struct BotArgs {
 fn main() {
     let bot_args = BotArgs::parse();
     if bot_args.strategy == "weighted" {
-        Bot::new().run(&Weighted::new(), bot_args.action_pause, bot_args.debug, bot_args.games)
+        Bot::new().run(&mut Weighted::new(), bot_args.action_pause, bot_args.debug, bot_args.games)
     }
     else if bot_args.strategy == "qlearning" {
-        Bot::new().run(&QLearning::new(), bot_args.action_pause, bot_args.debug, bot_args.games)
+        Bot::new().run(&mut QLearning::new(), bot_args.action_pause, bot_args.debug, bot_args.games)
     } else {
         panic!("not a known strategy")
     }
