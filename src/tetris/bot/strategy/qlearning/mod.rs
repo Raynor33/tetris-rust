@@ -36,6 +36,6 @@ impl Strategy for QLearning {
     }
 
     fn score(&self, outcome: &Tetris) -> f64 {
-        todo!()
+        1.0
     }
 }

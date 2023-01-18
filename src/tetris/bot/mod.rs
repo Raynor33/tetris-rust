@@ -14,7 +14,13 @@ impl Bot {
         Bot {}
     }
 
-    pub fn run(&self, strategy: &dyn Strategy, action_pause: u64, debug: bool) {
+    pub fn run(&self, strategy: &dyn Strategy, action_pause: u64, debug: bool, games: u32) {
+        for game in 0..games {
+            self.do_game(strategy, action_pause, debug)
+        }
+    }
+
+    pub fn do_game(&self, strategy: &dyn Strategy, action_pause: u64, debug: bool) {
         let mut tetris = Tetris::new();
         let mut shape_count = 0;
         loop {
