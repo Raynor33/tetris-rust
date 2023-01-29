@@ -9,9 +9,6 @@ impl Strategy for Weighted {
     fn choose_actions(&mut self, tetris: &Tetris) -> Vec<Action> {
         self.best_actions(tetris).actions
     }
-    fn best_actions(&self, tetris: &Tetris) -> BestActions {
-        todo!()
-    }
 
     fn score(&self, tetris: &Tetris) -> f64 {
         let analysis = analyse(tetris);

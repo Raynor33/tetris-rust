@@ -1,4 +1,4 @@
 
 [env]
-LIBTORCH = { value = "libtorch" , relative = true }
-DYLD_LIBRARY_PATH = { value = "libtorch/lib" , relative = true }
+#LIBTORCH = { value = "libtorch" , relative = true }
+#DYLD_LIBRARY_PATH = { value = "libtorch/lib" , relative = true }

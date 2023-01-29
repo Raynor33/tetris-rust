@@ -1,5 +1,5 @@
-use tch::{Device, nn, Tensor};
-use tch::nn::{Module, Optimizer, OptimizerConfig, Sequential, VarStore};
+// use tch::{Device, nn, Tensor};
+// use tch::nn::{Module, Optimizer, OptimizerConfig, Sequential, VarStore};
 use crate::tetris::bot::strategy::Strategy;
 use crate::tetris::{Action, Tetris};
 use crate::tetris::ActionResult::GameOver;
@@ -26,29 +26,29 @@ pub struct QLearning {
     training_inputs_buffer: Vec<[f64; ANALYSIS_ARRAY_SIZE]>,
     training_outputs_buffer: Vec<[f64; 1]>,
     training_frequency: usize,
-    net: Sequential,
-    pub optimiser: Optimizer,
+    // net: Sequential,
+    // pub optimiser: Optimizer,
 }
 
 struct TrainingItem {
-    input: Tensor,
-    output: Tensor,
+    // input: Tensor,
+    // output: Tensor,
 }
 
 impl QLearning {
     pub fn new() -> QLearning {
-        let vs= nn::VarStore::new(Device::Cpu);
-        let vs_root = &vs.root();
-        let net = nn::seq()
-            .add(nn::linear(
-                vs_root / "layer1",
-                i64::from(INPUT_NODES),
-                NET_HIDDEN_NODES,
-                Default::default(),
-            ))
-            .add_fn(|xs| xs.relu())
-            .add(nn::linear(vs_root, NET_HIDDEN_NODES, 1, Default::default()));
-        let mut optimiser = nn::Adam::default().build(&vs, LEARNING_RATE).unwrap();
+        // let vs= nn::VarStore::new(Device::Cpu);
+        // let vs_root = &vs.root();
+        // let net = nn::seq()
+        //     .add(nn::linear(
+        //         vs_root / "layer1",
+        //         i64::from(INPUT_NODES),
+        //         NET_HIDDEN_NODES,
+        //         Default::default(),
+        //     ))
+        //     .add_fn(|xs| xs.relu())
+        //     .add(nn::linear(vs_root, NET_HIDDEN_NODES, 1, Default::default()));
+        // let mut optimiser = nn::Adam::default().build(&vs, LEARNING_RATE).unwrap();
         QLearning {
             random_strategy: Random::new(),
             training_input_count: 0,
@@ -56,8 +56,8 @@ impl QLearning {
             training_inputs_buffer: vec![],
             training_outputs_buffer: vec![],
             training_frequency: 10,
-            optimiser,
-            net,
+            // optimiser,
+            // net,
         }
     }
 
@@ -78,22 +78,22 @@ impl QLearning {
 
         if self.training_input_count % self.training_frequency == 0 {
             // Tensor::stack({}, 0);
-            let mut input_tensors: Vec<Tensor> = vec![];
-            let mut output_tensors: Vec<Tensor> = vec![];
-            for input in &self.training_inputs_buffer {
-                input_tensors.push(Tensor::of_slice(input))
-            }
-            for output in &self.training_outputs_buffer {
-                output_tensors.push(Tensor::of_slice(output))
-            }
-            let input_tensor = Tensor::stack(&input_tensors, 0);
-            let output_tensor = Tensor::stack(&input_tensors, 0);
-            for _ in 0..EPOCH {
-                let loss = self.net
-                    .forward(&input_tensor)
-                    .cross_entropy_for_logits(&output_tensor);
-                self.optimiser.backward_step(&loss);
-            }
+            // let mut input_tensors: Vec<Tensor> = vec![];
+            // let mut output_tensors: Vec<Tensor> = vec![];
+            // for input in &self.training_inputs_buffer {
+            //     input_tensors.push(Tensor::of_slice(input))
+            // }
+            // for output in &self.training_outputs_buffer {
+            //     output_tensors.push(Tensor::of_slice(output))
+            // }
+            // let input_tensor = Tensor::stack(&input_tensors, 0);
+            // let output_tensor = Tensor::stack(&input_tensors, 0);
+            // for _ in 0..EPOCH {
+            //     let loss = self.net
+            //         .forward(&input_tensor)
+            //         .cross_entropy_for_logits(&output_tensor);
+            //     self.optimiser.backward_step(&loss);
+            // }
         }
         self.training_input_count = self.training_input_count + 1;
     }
@@ -126,8 +126,8 @@ impl Strategy for QLearning {
     }
 
     fn score(&self, outcome: &Tetris) -> f64 {
-        let output = self.net
-            .forward(&Tensor::stack(&vec![Tensor::of_slice(&QLearning::inputs(outcome))], 0));
+        // let output = self.net
+        //     .forward(&Tensor::stack(&vec![Tensor::of_slice(&QLearning::inputs(outcome))], 0));
         0.0
     }
 }
