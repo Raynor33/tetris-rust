@@ -78,8 +78,16 @@ impl QLearning {
 
         if self.training_input_count % self.training_frequency == 0 {
             // Tensor::stack({}, 0);
-            let input_tensor = Tensor::of_slice(&self.training_inputs_buffer[0][..]);
-            let output_tensor = Tensor::of_slice(&self.training_outputs_buffer[0][..]);
+            let mut input_tensors: Vec<Tensor> = vec![];
+            let mut output_tensors: Vec<Tensor> = vec![];
+            for input in &self.training_inputs_buffer {
+                input_tensors.push(Tensor::of_slice(input))
+            }
+            for output in &self.training_outputs_buffer {
+                output_tensors.push(Tensor::of_slice(output))
+            }
+            let input_tensor = Tensor::stack(&input_tensors, 0);
+            let output_tensor = Tensor::stack(&input_tensors, 0);
             for _ in 0..EPOCH {
                 let loss = self.net
                     .forward(&input_tensor)
@@ -119,7 +127,7 @@ impl Strategy for QLearning {
 
     fn score(&self, outcome: &Tetris) -> f64 {
         let output = self.net
-            .forward(&Tensor::of_slice(&QLearning::inputs(outcome)));
+            .forward(&Tensor::stack(&vec![Tensor::of_slice(&QLearning::inputs(outcome))], 0));
         0.0
     }
 }
